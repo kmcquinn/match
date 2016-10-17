@@ -1,0 +1,6 @@
+#SBATCH -J 
+#SBATCH -N 
+#SBATCH -n 
+#SBATCH -p normal              # Queue name
+#SBATCH -o 
+#SBATCH -t 
