@@ -321,7 +321,7 @@ def calcFit(bir, scr, filtStart):
 						totest[2] = totest[2] + y * delta
 						totest[3] = totest[3] + z * delta
 						makePars(bir, parspath, totest, "sfh_fullres")	#make pars file with 'test' to indicate temp file
-						comm = "calcsfh "+parspath+" "+scrPhot+" "+scrFake+" "+outpath+" -Kroupa -PARSEC > "+consolepath
+						comm = "calcsfh "+parspath+" "+scrPhot+" "+scrFake+" "+outpath+" -Kroupa -PARSEC"
 						fitlist.append(float(sp.check_output(comm.split()).splitlines()[-1].split()[-1][4:]))
 						permlist.append(totest)
 						flail = flail + 1
