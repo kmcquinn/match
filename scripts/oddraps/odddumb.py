@@ -644,7 +644,7 @@ def main():
 					GalFlux = float(info[2])
 					GalDist = float(info[3])
 					break
-	basedir = "../../galaxies/"+GalDir+"/"+GalName+"/metals_proc/"
+	basedir = "../../../../../galaxies/"+GalDir+"/"+GalName+"/metals_proc/"
 	scriptr = basedir + "scriptdir/"
 	fA, fB = setFolder(basedir)	#create work folder inside gal dir, move given files into it, send back filters used in file names
 	print(fA,fB)
