@@ -285,6 +285,7 @@ def calcFit(bir, scr, filtStart):
 	#first step is to create the pars file with the starting depths
 	makePars(bir, scrstring+"parsFirst", sold[1:], "sfh_fullres")
 	comm = "calcsfh "+scrstring+"parsFirst "+scrPhot+" "+scrFake+" "+scrstring+"outFirst -Kroupa -PARSEC > "+scrstring+"consoleFirst.txt"
+	print(comm.split())
 	sp.check_call(comm.split())
 	#check consolefile to record starting fit value
 	fitstr = sp.check_output(['tail', '-1', scrstring+"consoleFirst.txt"]).split()[-1]
