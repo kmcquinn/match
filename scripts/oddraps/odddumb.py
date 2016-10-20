@@ -268,6 +268,11 @@ def useLauncher(name,commarr, time):
 		time.sleep(30)
 
 def calcFit(bir, scr, filtStart):
+	'''
+	this is a modified version of the calcsfh depth optimatization on oddraps
+	it will take the starting filter values in the given par file and try every variation of the weak V and I filter limits witin a given range and step size
+	Each CMD's filter and resulting fit is given in the FiltResults file located in the calctests folder
+	'''
 	#runs simple calcsfh many times to find filter depths that produce best fit
 	#create folder to house calcsfh test runs
 	sp.call(["mkdir",scr+"calctests"])
@@ -292,75 +297,37 @@ def calcFit(bir, scr, filtStart):
 	print("fitval is: "+str(fitval))
 	#record this value to sold array
 	sold[0] = fitval
-	delta = .5		#choose how much values differ between runs
-	runnum = 0		#keeps track of number of completed cycles
-	maxrun = 0
-	while True:		#will stop loop 'manually' inside once end of cycle yield no positive change in lum
-		if runnum >= 100:
-			print('you need a vacation')
-			maxrun = 99
-			toret = grabDepths(scrstring+"outCyc099")
-			#define function that opens out file, returns filter list
-			break
-		flail = 0	#keeps track of permutation number
-		fitlist = []	#records fit in given run
-		permlist = []	#records filter values in given run
-		commarr = []	#records commands to run at once with launcher
-		for w in range(-1,2):	#go through each perm of var inc/dec
-			for x in range(-1,2):
-				for y in range(-1,2):
-					for z in range(-1,2):
-						#goal: create all pars files, run all jobs at one at end of loop through launcher
-						strflail = '%03d' % (flail,)		#convert run number to string for out files
-						parspath = scrstring+"calcparsTEST"+strflail
-						outpath = scrstring+"outTEST"+strflail
-						consolepath = scrstring+"consoleTEST"+strflail
-						totest = sold[1:]			#grab values stored at end of previous cycle
-						totest[0] = totest[0] + w * delta	#inc, dec, or stay constant depending on index values
-						totest[1] = totest[1] + x * delta
-						totest[2] = totest[2] + y * delta
-						totest[3] = totest[3] + z * delta
-						makePars(bir, parspath, totest, "sfh_fullres")	#make pars file with 'test' to indicate temp file
-						comm = "calcsfh "+parspath+" "+scrPhot+" "+scrFake+" "+outpath+" -Kroupa -PARSEC"
-						fitlist.append(float(sp.check_output(comm.split()).splitlines()[-1].split()[-1][4:]))
-						permlist.append(totest)
-						flail = flail + 1
-		#all commands, pars files for this cycle written.
-		#now run with launcher script
-		#now go back through console outputs to record fits for each run
-		minloc, minval = min(enumerate(fitlist), key=operator.itemgetter(1))		#find highest lum value and location after all trails complete
-		runstr = '%03d' % (runnum,)			#convert cycle number to str for out files		
-		if minval < sold[0]:				#if highest found value, exceeds prev number, this is sucessful run
-			sold[0] = minval			#new stored lum value
-			sold[1:] = permlist[minloc]		#new stored filter values
-			valstr = '%03d' % (minloc,)		#store best run number as string for out files
-			copyfile(scrstring+'calcparsTEST'+valstr, scrstring+'calcparsCyc'+runstr)	#copy temp pars of best run to new file
-			copyfile(scrstring+'outTEST'+valstr, scrstring+'outCyc'+runstr)				#copy temp out of best run to new file
-			runnum = runnum + 1
-		else:
-			maxrun = runnum - 1
-			toret = grabDepths(scrstring+"outCyc"+'%03d' % (runnum - 1,))		
-			break
-	#might be cool to create plot of fit vs. trial number to ensure it is improving/not topping off
-	#start by finding number of outCyc files 
-	xarr = []
-	yarr = []
-	for i in range(0, maxrun + 1):
-		istr = '%03d' % (i,)
-		xarr.append(i)
-		yline = sp.check_output(['tail', '-1', scrstring+'outCyc'+istr]).split()[-1]
-		yval = float(yline[4:])
-		yarr.append(yval)
-	plt.scatter(xarr, yarr, s=0.2)
-	plt.xlabel('cycle number')
-	plt.ylabel('best fit value')
-	plt.title('Minimizing fit value over many cycles')
-	plt.savefig(scrstring+"fitPlot.png")	
-	plt.close()
-	return toret
+	delta = .05		#choose how much values differ between runs
+	maxdelta = .25		#choose max deviation from start values
+	runnum = 1		#keeps track of number of completed cycles
+	maxrun = int(maxdelta/delta)
 	
-	#so in the /scriptdir/calctests directory we've run a bunch of different calcsfh's that have produced a set of depth values that minimize the fit value
-	#we've also created a plot showing the best fit value vs fit cycle. this is to ensure that the fit is actually dropping as the tests are run
+	flail = 0
+	fitlist = []
+	permlist = []
+	g = open(scrstring+"FiltResults","w")
+	g.write("Run Number\tDepth1\tDepth2\tFit Value")
+	for i in range(-maxrun,maxrun+1):
+		for j in range(-maxrun,maxrun+1):
+			strflail = '%03d' % (flail,)		#convert run number to string for out files
+			parspath = scrstring+"calcparsTEST"+strflail
+			outpath = scrstring+"outTEST"+strflail
+			consolepath = scrstring+"consoleTEST"+strflail
+			totest = sold[1:]
+			totest[1] = totest[1] + i * delta
+			totest[3] = totest[3] + j * delta
+			makePars(bir, parspath, totest, "sfh_fullres")	#make pars file with 'test' to indicate temp file
+			comm = "calcsfh "+parspath+" "+scrPhot+" "+scrFake+" "+outpath+" -Kroupa -PARSEC"
+			fitout = float(sp.check_output(comm.split()).splitlines()[-1].split()[-1][4:])
+			ps.call(["pg_cmd",fullpath+"outTEST"+strflail+".cmd",fullpath+"outTEST"+strflail+".ps"])
+			fitlist.append(fitout)
+			permlist.append(totest)
+			g.write(strflail+"\t"+str(totest[1])+"\t"+str(totest[3])+"\t"+str(fitout))
+			flail = flail + 1
+	minloc, minval = min(enumerate(fitlist), key=operator.itemgetter(1))
+	beststr = '%03d' % (minloc,)
+	g.write("Best run: outTEST"+beststr+", "+str(minval)+" with filter values "+str(permlist[minloc][1])+" "+str(permlist[minloc][3]))
+	return permlist[minloc]
 
 def fullCalc(bpath, fullpath, goodDepths, tbins):
 	#runs the full calcsfh workflow, incudes hybridMC, .ps plot of results
@@ -653,12 +620,12 @@ def main():
 	#from here on out, we are running match commands and will need to use sbatch to run efficently
 	bestDepth = calcFit(basedir, scriptr, Fstart)
 	#now we can run the full calcsfh script for each timebin
-	fullCalc(scriptr, basedir+"sfh_fullres/", bestDepth, "sfh_fullres")
-	fullCalc(scriptr, basedir+"sfh_no_res/", bestDepth, "sfh_no_res")
-	fullCalc(scriptr, basedir+"sfh_starburst_v1res/", bestDepth, "sfh_starburst_v1res")
-	fullCalc(scriptr, basedir+"sfh_starburst_v2res/", bestDepth, "sfh_starburst_v2res")
+	#fullCalc(scriptr, basedir+"sfh_fullres/", bestDepth, "sfh_fullres")
+	#fullCalc(scriptr, basedir+"sfh_no_res/", bestDepth, "sfh_no_res")
+	#fullCalc(scriptr, basedir+"sfh_starburst_v1res/", bestDepth, "sfh_starburst_v1res")
+	#fullCalc(scriptr, basedir+"sfh_starburst_v2res/", bestDepth, "sfh_starburst_v2res")
 	#all calcsfh runs have completed. Now to run fake to compute mass/light ratio
-	fullFake(basedir, scriptr, basedir+"fakes/", [GalFlux,GalDist], bestDepth)
+	#fullFake(basedir, scriptr, basedir+"fakes/", [GalFlux,GalDist], bestDepth)
 	
 if __name__ == "__main__":
     main()
