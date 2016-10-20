@@ -319,7 +319,7 @@ def calcFit(bir, scr, filtStart):
 			makePars(bir, parspath, totest, "sfh_fullres")	#make pars file with 'test' to indicate temp file
 			comm = "calcsfh "+parspath+" "+scrPhot+" "+scrFake+" "+outpath+" -Kroupa -PARSEC"
 			fitout = float(sp.check_output(comm.split()).splitlines()[-1].split()[-1][4:])
-			ps.call(["pg_cmd",fullpath+"outTEST"+strflail+".cmd",fullpath+"outTEST"+strflail+".ps"])
+			sp.call(["pg_cmd",fullpath+"outTEST"+strflail+".cmd",fullpath+"outTEST"+strflail+".ps"])
 			fitlist.append(fitout)
 			permlist.append(totest)
 			g.write(strflail+"\t"+str(totest[1])+"\t"+str(totest[3])+"\t"+str(fitout))
