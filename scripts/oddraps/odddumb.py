@@ -319,7 +319,7 @@ def calcFit(bir, scr, filtStart):
 			makePars(bir, parspath, totest, "sfh_fullres")	#make pars file with 'test' to indicate temp file
 			comm = "calcsfh "+parspath+" "+scrPhot+" "+scrFake+" "+outpath+" -Kroupa -PARSEC"
 			fitout = float(sp.check_output(comm.split()).splitlines()[-1].split()[-1][4:])
-			sp.call(["pg_cmd",fullpath+"outTEST"+strflail+".cmd",fullpath+"outTEST"+strflail+".ps"])
+			sp.call(["pg_cmd",outpath+".cmd",outpath+".ps"])
 			fitlist.append(fitout)
 			permlist.append(totest)
 			g.write(strflail+"\t"+str(totest[1])+"\t"+str(totest[3])+"\t"+str(fitout))
@@ -616,9 +616,11 @@ def main():
 	print(fA,fB)
 	#now we need to make any needed changes to these given files before using them in calcsfh
 	Fstart = editFiles(scriptr, fA, fB)
+	print(Fstart)
 	#now run calcsfh with different filter values to find best depths
 	#from here on out, we are running match commands and will need to use sbatch to run efficently
 	bestDepth = calcFit(basedir, scriptr, Fstart)
+	print(bestDepth)
 	#now we can run the full calcsfh script for each timebin
 	#fullCalc(scriptr, basedir+"sfh_fullres/", bestDepth, "sfh_fullres")
 	#fullCalc(scriptr, basedir+"sfh_no_res/", bestDepth, "sfh_no_res")
