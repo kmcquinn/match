@@ -306,7 +306,7 @@ def calcFit(bir, scr, filtStart):
 	fitlist = []
 	permlist = []
 	g = open(scrstring+"FiltResults","w")
-	g.write("Run Number\tDepth1\tDepth2\tFit Value")
+	g.write("Run Number\tDepth1\tDepth2\tFit Value\n")
 	for i in range(-maxrun,maxrun+1):
 		for j in range(-maxrun,maxrun+1):
 			strflail = '%03d' % (flail,)		#convert run number to string for out files
@@ -322,11 +322,12 @@ def calcFit(bir, scr, filtStart):
 			sp.call(["pg_cmd",outpath+".cmd",outpath+".ps"])
 			fitlist.append(fitout)
 			permlist.append(totest)
-			g.write(strflail+"\t"+str(totest[1])+"\t"+str(totest[3])+"\t"+str(fitout))
+			g.write(strflail+"\t"+str(totest[1])+"\t"+str(totest[3])+"\t"+str(fitout)+"\n")
 			flail = flail + 1
 	minloc, minval = min(enumerate(fitlist), key=operator.itemgetter(1))
 	beststr = '%03d' % (minloc,)
 	g.write("Best run: outTEST"+beststr+", "+str(minval)+" with filter values "+str(permlist[minloc][1])+" "+str(permlist[minloc][3]))
+	g.close()
 	return permlist[minloc]
 
 def fullCalc(bpath, fullpath, goodDepths, tbins):
