@@ -340,13 +340,13 @@ def calcFit(bir, scr, filtStart):
 			runname.append(flail)	#add runname to list
 			if len(commlist) == 10:
 				for i in range(0,10):
-					comdict[runname[i]] = MyClass(commlist[i]) #create 10 classes, each with own command, called with runnumber
-					comdict[runname[i]].start()
-					comdict[runname[i]].join()	#starts command in background, listens for stdout
+					commdict[runname[i]] = MyClass(commlist[i]) #create 10 classes, each with own command, called with runnumber
+					commdict[runname[i]].start()
+					commdict[runname[i]].join()	#starts command in background, listens for stdout
 				while True:
 					restart = 0
 					for i in runname:
-						lastout = comdict[i].stdout.splitlines()[-1]
+						lastout = commdict[i].stdout.splitlines()[-1]
 						if lastout.split()[0] != 'Best':	#checks to see if each job is complete
 							restart = 1
 							break
@@ -358,7 +358,7 @@ def calcFit(bir, scr, filtStart):
 						outname = '%03d' % (i,)
 						Opath = scrstring+"outTEST"+outname
 						sp.call(["pg_cmd",Opath+".cmd",Opath+".ps"])	#create output ps file for each run
-						fitout = float(comdict[i].stdout.splitlines()[-1].split()[-1][4:])
+						fitout = float(commdict[i].stdout.splitlines()[-1].split()[-1][4:])
 						fitlist.append(fitout)	#grab and append fit value to list
 						FiltA = str(permlist[i][1])
 						FiltB = str(permlist[i][3])
