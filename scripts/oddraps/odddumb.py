@@ -10,6 +10,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import fnmatch
+import threading
 '''
 This version is just going to get us off the ground in running analysis
 It sends every command out linerally. This includes depth optimization and hybridMC runs, which would stand the greatest improvement from parallel processing.
@@ -32,6 +33,20 @@ oddraps is called with an sbatch script that will probably need 24 hours to be s
 	all computationally costly actions run by creating sbatchs within script
 	oddraps waits for job complete through while loops and bash calls
 '''
+class MyClass(threading.Thread):
+    def __init__(self, comm):
+        self.stdout = None
+        self.stderr = None
+        threading.Thread.__init__(self)
+        self.comm = comm
+
+    def run(self):
+        p = subprocess.Popen(self.comm.split(),
+                             shell=False,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+
+        self.stdout, self.stderr = p.communicate()
 
 def setFolder(bir):
 #passed
@@ -303,33 +318,63 @@ def calcFit(bir, scr, filtStart):
 	maxrun = int(maxdelta/delta)
 	
 	flail = 0
-	fitlist = []
-	permlist = []
+	fitlist = []	#records every fit value
+	permlist = []	#records arrays with filter depths
+	runname = []
+	commlist = []	#records commands to run
+	commdict = {}
 	g = open(scrstring+"FiltResults","w")
 	g.write("Run Number\tDepth1\tDepth2\tFit Value\n")
 	for i in range(-maxrun,maxrun+1):
 		for j in range(-maxrun,maxrun+1):
 			strflail = '%03d' % (flail,)		#convert run number to string for out files
-			parspath = scrstring+"calcparsTEST"+strflail
+			parspath = scrstring+"calcparsTEST"+strflail	#paths to calcsfh files
 			outpath = scrstring+"outTEST"+strflail
 			consolepath = scrstring+"consoleTEST"+strflail
-			totest = sold[1:]
+			totest = sold[1:]	#changing depth values up or down by delta
 			totest[1] = totest[1] + i * delta
 			totest[3] = totest[3] + j * delta
 			makePars(bir, parspath, totest, "sfh_fullres")	#make pars file with 'test' to indicate temp file
-			comm = "calcsfh "+parspath+" "+scrPhot+" "+scrFake+" "+outpath+" -Kroupa -PARSEC"
-			fitout = float(sp.check_output(comm.split()).splitlines()[-1].split()[-1][4:])
-			sp.call(["pg_cmd",outpath+".cmd",outpath+".ps"])
-			fitlist.append(fitout)
 			permlist.append(totest)
-			g.write(strflail+"\t"+str(totest[1])+"\t"+str(totest[3])+"\t"+str(fitout)+"\n")
+			comm = "calcsfh "+parspath+" "+scrPhot+" "+scrFake+" "+outpath+" -Kroupa -PARSEC"	#command to send out
+			commlist.append(comm)	#add to list to build up 10 runs
+			runname.append(flail)	#add runname to list
+			if len(commlist) == 10:
+				for i in range(0,10):
+					comdict[runname[i]] = MyClass(commlist[i]) #create 10 classes, each with own command, called with runnumber
+					comdict[runname[i]].start()
+					comdict[runname[i]].join()	#starts command in background, listens for stdout
+				while True:
+					restart = 0
+					for i in runname:
+						lastout = comdict[i].stdout.splitlines()[-1]
+						if lastout.split()[0] != 'Best':	#checks to see if each job is complete
+							restart = 1
+							break
+					if restart == 1:	#if any job still running, wait one minute and check again
+						time.sleep(60)
+						continue
+					#if you've gotten to here, all your jobs have completed
+					for i in runname:
+						outname = '%03d' % (i,)
+						Opath = scrstring+"outTEST"+outname
+						sp.call(["pg_cmd",Opath+".cmd",Opath+".ps"])	#create output ps file for each run
+						fitout = float(comdict[i].stdout.splitlines()[-1].split()[-1][4:])
+						fitlist.append(fitout)	#grab and append fit value to list
+						FiltA = str(permlist[i][1])
+						FiltB = str(permlist[i][3])
+						g.write(outname+"\t"FiltA+"\t"+FiltB+"\t"+str(fitout)+"\n")	#grab filter depths and write to results file
+						commlist = []
+						runname = []
+						commdict = {}	#reset lists, dict to add 10 new commands
+						break
 			flail = flail + 1
 	minloc, minval = min(enumerate(fitlist), key=operator.itemgetter(1))
 	beststr = '%03d' % (minloc,)
 	g.write("Best run: outTEST"+beststr+", "+str(minval)+" with filter values "+str(permlist[minloc][1])+" "+str(permlist[minloc][3]))
 	g.close()
 	return permlist[minloc]
-
+	
 def fullCalc(bpath, fullpath, goodDepths, tbins):
 	#runs the full calcsfh workflow, incudes hybridMC, .ps plot of results
 	photLoc = bpath+"scriptdir/phot"
