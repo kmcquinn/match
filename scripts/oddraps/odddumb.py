@@ -40,10 +40,10 @@ class MyClass(threading.Thread):
         self.comm = comm
 
     def run(self):
-        p = subprocess.Popen(self.comm.split(),
+        p = sp.Popen(self.comm.split(),
                              shell=False,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
+                             stdout=sp.PIPE,
+                             stderr=sp.PIPE)
 
         self.stdout, self.stderr = p.communicate()
 
