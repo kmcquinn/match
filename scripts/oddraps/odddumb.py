@@ -4,7 +4,6 @@ import sys
 import random
 import math
 import operator
-import commands
 from shutil import copyfile
 import matplotlib
 matplotlib.use('Agg')
@@ -62,8 +61,8 @@ def setFolder(bir):
 	fold = bir+"../conf_new_dol/"
 	inList = sp.check_output(["ls",fold]).splitlines()
 	cull = fnmatch.filter(inList,"*matchpars231")
-        copyfile(fold+cull[0], bir+"scriptdir/basepars")
-	#find phot file in input_data folder
+	copyfile(fold+cull[0], bir+"scriptdir/basepars")
+        #find phot file in input_data folder
 	#NOTE: Here I will also store the written filter values for editFiles to use
 	fold = bir+"../proc_new_dol/"
 	inList = sp.check_output(["ls",fold]).splitlines()
@@ -363,7 +362,7 @@ def calcFit(bir, scr, filtStart):
 						fitlist.append(fitout)	#grab and append fit value to list
 						FiltA = str(permlist[i][1])
 						FiltB = str(permlist[i][3])
-						g.write(outname+"\t"FiltA+"\t"+FiltB+"\t"+str(fitout)+"\n")	#grab filter depths and write to results file
+						g.write(outname+"\t"+FiltA+"\t"+FiltB+"\t"+str(fitout)+"\n")	#grab filter depths and write to results file
 						commlist = []
 						runname = []
 						commdict = {}	#reset lists, dict to add 10 new commands
