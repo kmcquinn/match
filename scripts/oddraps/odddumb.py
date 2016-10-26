@@ -231,6 +231,7 @@ def calcFit(bir, scr, filtStart):
 	flail = 0
 	commdict = {} #commdict[flail] = [strflail, filtList, command, fit]
 	runname = []
+	fitlist = []
 	g = open(scrstring+"FiltResults","w")
 	g.write("Run Number\tDepth1\tDepth2\tFit Value\n")
 	for i in range(-maxrun,maxrun+1):
