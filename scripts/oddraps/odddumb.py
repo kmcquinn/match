@@ -9,7 +9,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import fnmatch
-import threading
+import multiprocessing as mp
 '''
 This version is just going to get us off the ground in running analysis
 It sends every command out linerally. This includes depth optimization and hybridMC runs, which would stand the greatest improvement from parallel processing.
@@ -27,21 +27,6 @@ For your given galaxy, only need to change things outlined in main()
 
 initially can only complete workflow for single galaxy at a time, time requirements
 '''
-class MyClass(threading.Thread):
-    def __init__(self, comm):
-        self.stdout = None
-        self.stderr = None
-        threading.Thread.__init__(self)
-        self.comm = comm
-
-    def run(self):
-        p = sp.Popen(self.comm.split(),
-                             shell=False,
-                             stdout=sp.PIPE,
-                             stderr=sp.PIPE)
-
-        self.stdout, self.stderr = p.communicate()
-
 def setFolder(bir):
 #passed
 	'''
@@ -176,41 +161,6 @@ def makePars(basepath, newpath, depths, times):
 	p.close()
 	g.close()
 
-
-
-def runBatch(comm, name, times):
-	#creates batch script w/ given command and runs, waiting for completion
-	#first need to make the file
-	p = open("basebatch.txt", "r")
-	g = open("script","w")
-	g.write(p.readline())
-	g.write(p.readline()[:-1] + name + "\n")
-	g.write(p.readline()[:-1] + name + ".o%j" + "\n")
-	g.write(p.readline()[:-1] + "1" + "\n")
-	g.write(p.readline())
-	g.write(p.readline()[:-1] + times + "\n")
-	g.write(p.readline())
-	g.write(comm)
-	p.close()
-	g.close()
-	
-	#now need to queue script and find job id used to check status
-	jobnum = int(sp.check_output(["sbatch","script"]).splitlines()[-1].split()[-1])
-	
-	#check for job completion every 30 seconds
-	'''
-	here i'm going to have to be sloppy, as it seems like squeue is pretty unreliable
-	at showing completed jobs
-	i'm just going to assume a job is complete if it doesn't say pending or running
-	i'm sure this will work well
-	'''
-	while True:
-		line = sp.check_output(["squeue","-j",str(jobnum)]).splitlines()[-1].split()
-		if (line[4] != "R") and (line[4] != "PD"):
-			break
-		time.sleep(30)
-
-
 def grabDepths(outpath):
 	#only for calcsfh pars files
 	deparr = []
@@ -227,54 +177,19 @@ def grabDepths(outpath):
 	return deparr
 	#returns four filter depth values
 
-
-def useLauncher(name,commarr, time):
-	#makes launcher script with given commands, runs and waits for completion
-	#first make launcher.slurm file
-	g = open("pylaunch.slurm","w")
-	#header info
-	with open("launchhead.txt","r") as fobj:
-		for line in fobj:
-			g.write(line)
-	#body info
-	b = open("launchbody.txt","r")
-	g.write(b.readline()[:-1] +name+"\n")
-	g.write(b.readline()[:-1] +str(math.ceil(float(len(commarr))/16.0))+"\n") #one core per command
-	g.write(b.readline()[:-1] +str(len(commarr))+"\n")
-	g.write(b.readline())
-	g.write(b.readline()[:-1] +name+".o%j"+"\n")
-	g.write(b.readline()[:-1] + time + "\n")
-	b.close()
-	#footer info
-	with open("launchfoot.txt","r") as fobj:
-		for line in fobj:
-			g.write(line)
-	g.close()
-	
-	#now need to build paramlist
-	p = open("paramlist","w")
-	for i in comarr:
-		if i == len(comarr) - 1:
-			p.write(i)
-			continue
-		p.write(i + "\n")
-	p.close()
-	
-	#now launch slurm script, grab job id for tracking
-	jobnum = int(sp.check_output(["sbatch","pylaunch.slurm"]).splitlines()[-1].split()[-1])
-	
-	#check for job completion every 30 seconds
-	'''
-	here i'm going to have to be sloppy, as it seems like squeue is pretty unreliable
-	at showing completed jobs
-	i'm just going to assume a job is complete if it doesn't say pending or running
-	i'm sure this will work well
-	'''
+def doWork(Cdict, flail):
+	comm = Cdict[flail][2]
+	p = sp.Popen(comm.split(), stdout=sp.PIPE)
+	out, err = p.communicate()
 	while True:
-		line = sp.check_output(["squeue","-j",str(jobnum)]).splitlines()[-1].split()
-		if (line[4] != "R") and (line[4] != "PD"):
+		check = out.splitlines()[-1]
+		if check.split()[0] == "Best":
+			fit = float(check.split()[-1][4:])
+			Cdict[flail].append(fit)
 			break
-		time.sleep(30)
+		else:
+			time.sleep(60)
+			continue
 
 def calcFit(bir, scr, filtStart):
 	'''
@@ -312,62 +227,51 @@ def calcFit(bir, scr, filtStart):
 	maxrun = int(maxdelta/delta)
 	
 	flail = 0
-	fitlist = []	#records every fit value
-	permlist = []	#records arrays with filter depths
+	commdict = {} #commdict[flail] = [strflail, filtList, command, fit]
 	runname = []
-	commlist = []	#records commands to run
-	commdict = {}
 	g = open(scrstring+"FiltResults","w")
 	g.write("Run Number\tDepth1\tDepth2\tFit Value\n")
 	for i in range(-maxrun,maxrun+1):
 		for j in range(-maxrun,maxrun+1):
 			strflail = '%03d' % (flail,)		#convert run number to string for out files
+			commdict[flail] = [strflail]
 			parspath = scrstring+"calcparsTEST"+strflail	#paths to calcsfh files
 			outpath = scrstring+"outTEST"+strflail
 			consolepath = scrstring+"consoleTEST"+strflail
 			totest = sold[1:]	#changing depth values up or down by delta
 			totest[1] = totest[1] + i * delta
 			totest[3] = totest[3] + j * delta
+			commdict[flail].append(totest)
 			makePars(bir, parspath, totest, "sfh_fullres")	#make pars file with 'test' to indicate temp file
-			permlist.append(totest)
 			comm = "calcsfh "+parspath+" "+scrPhot+" "+scrFake+" "+outpath+" -Kroupa -PARSEC"	#command to send out
-			commlist.append(comm)	#add to list to build up 10 runs
+			commdict[flail].append(comm)
 			runname.append(flail)	#add runname to list
-			if len(commlist) == 10:
-				for i in range(0,10):
-					commdict[runname[i]] = MyClass(commlist[i]) #create 10 classes, each with own command, called with runnumber
-					commdict[runname[i]].start()
-					commdict[runname[i]].join()	#starts command in background, listens for stdout
-				while True:
-					restart = 0
-					for i in runname:
-						lastout = commdict[i].stdout.splitlines()[-1]
-						if lastout.split()[0] != 'Best':	#checks to see if each job is complete
-							restart = 1
-							break
-					if restart == 1:	#if any job still running, wait one minute and check again
-						time.sleep(60)
-						continue
-					#if you've gotten to here, all your jobs have completed
-					for i in runname:
-						outname = '%03d' % (i,)
-						Opath = scrstring+"outTEST"+outname
-						sp.call(["pg_cmd",Opath+".cmd",Opath+".ps"])	#create output ps file for each run
-						fitout = float(commdict[i].stdout.splitlines()[-1].split()[-1][4:])
-						fitlist.append(fitout)	#grab and append fit value to list
-						FiltA = str(permlist[i][1])
-						FiltB = str(permlist[i][3])
-						g.write(outname+"\t"+FiltA+"\t"+FiltB+"\t"+str(fitout)+"\n")	#grab filter depths and write to results file
-					commlist = []
-					runname = []
-					commdict = {}	#reset lists, dict to add 10 new commands
-					break
+			if len(runname) == 10:
+				proclist = []
+				for i in runname:
+					process = mp.Process(target =doWork, args=(commdict, i))
+					proclist.append(process)
+				for p in proclist:
+					p.start()
+				for p in proclist:
+					p.join()
+				#if you've gotten to here, all your jobs have completed
+				for i in runname:
+					coolarr = commdict[i]
+					outname = coolarr[0]
+					Opath = scrstring+"outTEST"+outname
+					sp.call(["pg_cmd",Opath+".cmd",Opath+".ps"])	#create output ps file for each run
+					fitlist.append(coolarr[3])	#grab and append fit value to list
+					FiltA = str(coolarr[1][1])
+					FiltB = str(coolarr[1][3])
+					g.write(outname+"\t"+FiltA+"\t"+FiltB+"\t"+str(coolarr[3])+"\n")	#grab filter depths and write to results file
+				runname = []
 			flail = flail + 1
 	minloc, minval = min(enumerate(fitlist), key=operator.itemgetter(1))
 	beststr = '%03d' % (minloc,)
-	g.write("Best run: outTEST"+beststr+", "+str(minval)+" with filter values "+str(permlist[minloc][1])+" "+str(permlist[minloc][3]))
+	g.write("Best run: outTEST"+beststr+", "+str(minval)+" with filter values "+str(commdict[minloc][1][1])+" "+str(commdict[minloc][1][3]))
 	g.close()
-	return permlist[minloc]
+	return commdict[minloc][1]
 	
 def fullCalc(bpath, fullpath, goodDepths, tbins):
 	#runs the full calcsfh workflow, incudes hybridMC, .ps plot of results
