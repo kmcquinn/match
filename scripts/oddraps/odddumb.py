@@ -260,6 +260,7 @@ def calcFit(bir, scr, filtStart):
 				#if you've gotten to here, all your jobs have completed
 				for i in runname:
 					coolarr = commdict[i]
+					print(coolarr)
 					outname = coolarr[0]
 					Opath = scrstring+"outTEST"+outname
 					sp.call(["pg_cmd",Opath+".cmd",Opath+".ps"])	#create output ps file for each run
