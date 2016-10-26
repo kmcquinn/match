@@ -177,15 +177,16 @@ def grabDepths(outpath):
 	return deparr
 	#returns four filter depth values
 
-def doWork(Cdict, flail):
-	comm = Cdict[flail][2]
+def doWork(flail):
+	global commdict
+	comm = commdict[flail][2]
 	p = sp.Popen(comm.split(), stdout=sp.PIPE)
 	out, err = p.communicate()
 	while True:
 		check = out.splitlines()[-1]
 		if check.split()[0] == "Best":
 			fit = float(check.split()[-1][4:])
-			Cdict[flail].append(fit)
+			commdict[flail].append(fit)
 			break
 		else:
 			time.sleep(60)
