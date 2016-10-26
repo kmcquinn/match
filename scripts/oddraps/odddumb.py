@@ -18,19 +18,14 @@ It looks like the process of splitting this analysis into serial and parallel se
 
 For now, this should complete full analysis on a single galaxy.
 
-
-script will currently hang if sbatch job fails
-need to finetune time listed on batch scripts
-
 oddraps = on dwarf disks, running a python script
 
-oddraps assumes running in /metals/scripts/oddraps/ with needed database files
+oddraps assumes running in /metals/scripts/newodd/match/scripts/oddraps/ with needed database files
+I run with the "batchs" slrum script in that folder, with command: sbatch batchs
+
+For your given galaxy, only need to change things outlined in main()
+
 initially can only complete workflow for single galaxy at a time, time requirements
-oddraps is called with an sbatch script that will probably need 24 hours to be safe
-	runs on single node to minimize computational requirements
-	all organizational instructions (folder and file creation, grabbing values from files, etc.) run on python node
-	all computationally costly actions run by creating sbatchs within script
-	oddraps waits for job complete through while loops and bash calls
 '''
 class MyClass(threading.Thread):
     def __init__(self, comm):
@@ -645,6 +640,21 @@ def calclum(path_to_fakeout, galdist):
 
 
 def main():
+	'''
+	Your galaxy run needs to change:
+	1.) GalName to the folder name of your galaxy
+	2.) basedir: change if you happen to be in the /oddraps/ folder in a different directory that what I assume.
+		-Change so current directory connects to metals_proc for your gal as shown
+	3.) Comment out or add what functions needed for your analysis
+		-setFolder: creates folder for our use, moves given phot, fake, pars files. Returns filter names given in phot file name
+		-editFiles: edits given pars file to work with current calcsfh version. overwrites filter names in pars file if different to file name. Returns filter depths found in given pars file
+		-calcFit: Generates a bunch of different calcsfh runs with different filter depths centered around those given. Produces FiltResults file to connect output files with filter and fit values. Also finds the run with the lowest fit value. Returns the filter values that produced the lowest fit
+		-fullCalc: MC runs for given filter depths and timebin. Also combines and produces all needed .ps outputs
+		-fullFake: Finds IRAC filter depths that produce highest "fake" luminosity for galaxy. Compares with known magnitude of gal, produces M/L ratio
+	    You will need setFolder and editFiles the first time on a given galaxy in order to run any other functions
+	    Information from each function is not ingelligently stored (ie saved in reference file to save time on repeat runs). I'll add this once everything works.
+	'''
+
 	GalName = "10210_UGC8651"
 	#find all cataloged infomation based on galaxy
 	with open('GalCatalog','r') as fobj:
