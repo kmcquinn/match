@@ -253,7 +253,7 @@ def calcFit(bir, scr, filtStart):
 			if len(runname) == 10:
 				proclist = []
 				for i in runname:
-					process = mp.Process(target =doWork, args=(commdict, i))
+					process = mp.Process(target =doWork, args=(i,))
 					proclist.append(process)
 				for p in proclist:
 					p.start()
