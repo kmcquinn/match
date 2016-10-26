@@ -4,7 +4,6 @@ import sys
 import random
 import math
 import operator
-import commands
 from shutil import copyfile
 import matplotlib
 matplotlib.use('Agg')

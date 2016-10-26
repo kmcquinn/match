@@ -363,10 +363,10 @@ def calcFit(bir, scr, filtStart):
 						FiltA = str(permlist[i][1])
 						FiltB = str(permlist[i][3])
 						g.write(outname+"\t"+FiltA+"\t"+FiltB+"\t"+str(fitout)+"\n")	#grab filter depths and write to results file
-						commlist = []
-						runname = []
-						commdict = {}	#reset lists, dict to add 10 new commands
-						break
+					commlist = []
+					runname = []
+					commdict = {}	#reset lists, dict to add 10 new commands
+					break
 			flail = flail + 1
 	minloc, minval = min(enumerate(fitlist), key=operator.itemgetter(1))
 	beststr = '%03d' % (minloc,)
