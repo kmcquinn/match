@@ -177,22 +177,20 @@ def grabDepths(outpath):
 	return deparr
 	#returns four filter depth values
 
-def doWork(flail):
-	global commdict
-	comm = commdict[flail][2]
-	p = sp.Popen(comm.split(), stdout=sp.PIPE)
-	out, err = p.communicate()
-	while True:
-		check = out.splitlines()[-1]
-		if check.split()[0] == "Best":
-			fit = float(check.split()[-1][4:])
-			commdict[flail].append(fit)
-			break
-		else:
-			time.sleep(60)
-			continue
-
 def calcFit(bir, scr, filtStart):
+	def doWork(flail):
+		comm = commdict[flail][2]
+		p = sp.Popen(comm.split(), stdout=sp.PIPE)
+		out, err = p.communicate()
+		while True:
+			check = out.splitlines()[-1]
+			if check.split()[0] == "Best":
+				fit = float(check.split()[-1][4:])
+				commdict[flail].append(fit)
+				break
+			else:
+				time.sleep(60)
+				continue
 	'''
 	this is a modified version of the calcsfh depth optimatization on oddraps
 	it will take the starting filter values in the given par file and try every variation of the weak V and I filter limits witin a given range and step size
