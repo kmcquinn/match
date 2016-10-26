@@ -212,6 +212,7 @@ def calcFit(bir, scr, filtStart):
 	
 	#before starting all the runs, I need to run calcsfh once with these starting depths to get a baseline to compare all the permutations with
 	#first step is to create the pars file with the starting depths
+	'''
 	makePars(bir, scrstring+"parsFirst", sold[1:], "sfh_fullres")
 	comm = "calcsfh "+scrstring+"parsFirst "+scrPhot+" "+scrFake+" "+scrstring+"outFirst -Kroupa -PARSEC"
 	fitstr = sp.check_output(comm.split()).splitlines()[-1].split()[-1]
@@ -221,6 +222,7 @@ def calcFit(bir, scr, filtStart):
 	print("fitval is: "+str(fitval))
 	#record this value to sold array
 	sold[0] = fitval
+	'''
 	delta = .05		#choose how much values differ between runs
 	maxdelta = .25		#choose max deviation from start values
 	runnum = 1		#keeps track of number of completed cycles
