@@ -178,19 +178,19 @@ def grabDepths(outpath):
 	#returns four filter depth values
 
 def doWork(putin):
-		commdict, flail = putin
-		comm = commdict[flail][2]
-		p = sp.Popen(comm.split(), stdout=sp.PIPE)
-		out, err = p.communicate()
-		while True:
-			check = out.splitlines()[-1]
-			if check.split()[0] == "Best":
-				fit = float(check.split()[-1][4:])
-				return fit
-				break
-			else:
-				time.sleep(60)
-				continue
+	commdict, flail = putin
+	comm = commdict[flail][2]
+	p = sp.Popen(comm.split(), stdout=sp.PIPE)
+	out, err = p.communicate()
+	while True:
+		check = out.splitlines()[-1]
+		if check.split()[0] == "Best":
+			fit = float(check.split()[-1][4:])
+			return fit
+			break
+		else:
+			time.sleep(60)
+			continue
 
 def calcFit(bir, scr, filtStart):
 	'''
@@ -256,15 +256,26 @@ def calcFit(bir, scr, filtStart):
 	putin = ((commdict, i) for i in runname)
 	reslist = []
 	r = pool.map_async(doWork, putin, callback=reslist.append)	#fills cpu cores with dowork jobs, each with different flail value from runname
+	print(reslist)
 	r.wait()	#waits until all jobs are completed
 	for i in runname:
 		commdict[i].append(reslist[i])
+		coolarr = commdict[i]
+		outname = coolarr[0]
+		Opath = scrstring+"outTEST"+outname
+		sp.call(["pg_cmd",Opath+".cmd",Opath+".ps"])	#create output ps file for each run
+		FiltA = str(coolarr[1][1])
+		FiltB = str(coolarr[1][3])
+		g.write(outname+"\t"+FiltA+"\t"+FiltB+"\t"+str(coolarr[3])+"\n")	#grab filter depths and write to results file
 	minloc, minval = min(enumerate(reslist), key=operator.itemgetter(1))
 	beststr = '%03d' % (minloc,)
 	g.write("Best run: outTEST"+beststr+", "+str(minval)+" with filter values "+str(commdict[minloc][1][1])+" "+str(commdict[minloc][1][3]))
 	g.close()
 	return commdict[minloc][1]
 	
+def Calcwork(comm):
+	sp.call(comm.split())
+	return 0
 def fullCalc(bpath, fullpath, goodDepths, tbins):
 	#runs the full calcsfh workflow, incudes hybridMC, .ps plot of results
 	photLoc = bpath+"scriptdir/phot"
@@ -304,6 +315,7 @@ def fullCalc(bpath, fullpath, goodDepths, tbins):
 	part4 = " -mbolerrsig="
 	part5 = " > "+fullpath+"console"
 	
+	runarr = []
 	for i in range(0,50):
 		rand = random.randint(0,5000)
 		digit = '%02d' % (i,)
@@ -312,7 +324,10 @@ def fullCalc(bpath, fullpath, goodDepths, tbins):
 		outfile.write(out_string)
 		outfile.close()
 		comm = part1 + digit + part2 + str(rand) + part3 + str(lgsig) + part4 + str(mbol) + part5 + digit
-		sp.call(comm.split())
+		runnarr.append(comm)
+	pool = mp.Pool(None)
+	r = pool.map_async(Calcwork, runarr)	#fills cpu cores with dowork jobs, each with different flail value from runname
+	r.wait()
 	#combining the results using bestfit.
 	#cmd10 = ["module","load","pgplot/5.2-sl6-gfortran"]
 	#sp.call(cmd10)
