@@ -252,7 +252,7 @@ def calcFit(bir, scr, filtStart):
 			#all commands created, now run them all with pool
 	pool = mp.Pool(None)
 	reslist = []
-	r = pool.map_async(dowork, runname, callback=results.append)	#fills cpu cores with dowork jobs, each with different flail value from runname
+	r = pool.map_async(dowork, runname, callback=reslist.append)	#fills cpu cores with dowork jobs, each with different flail value from runname
 	r.wait()	#waits until all jobs are completed
 	for i in runname:
 		commdict[i].append(reslist[i])
