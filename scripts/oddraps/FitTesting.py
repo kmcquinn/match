@@ -13,24 +13,19 @@ import fnmatch
 '''
 This version is just going to get us off the ground in running analysis
 It sends every command out linerally. This includes depth optimization and hybridMC runs, which would stand the greatest improvement from parallel processing.
-
-It looks like the process of splitting this analysis into serial and parallel sections will be complex. Probably involving a hybrid of python and bash.
-
-For now, this should complete full analysis on a single galaxy.
-
-
-script will currently hang if sbatch job fails
-need to finetune time listed on batch scripts
-
 oddraps = on dwarf disks, running a python script
 
-oddraps assumes running in /metals/scripts/oddraps/ with needed database files
-initially can only complete workflow for single galaxy at a time, time requirements
-oddraps is called with an sbatch script that will probably need 24 hours to be safe
-	runs on single node to minimize computational requirements
-	all organizational instructions (folder and file creation, grabbing values from files, etc.) run on python node
-	all computationally costly actions run by creating sbatchs within script
-	oddraps waits for job complete through while loops and bash calls
+Ensure script has all files needed in same folder:
+	GalCatalog
+	sfh_* files
+	batch script to run on TACC
+	
+Edit batch file to run this script (command: python FitTesting.py)
+	set time accordingly (currently about 30 hours for full run)
+
+Failure will most probably occur in the setFolder function
+	Assumes the given calcsfh files and pars file are in the folders shown
+	Can probably edit this to point to the right places
 '''
 
 def setFolder(bir):
@@ -601,7 +596,16 @@ def calclum(path_to_fakeout, galdist):
 
 
 def main():
+	'''
+	Edit the following:
+	- GalName: Name of the folder of your galaxy in /acs/
+	- GalPath: Path to the /galaxies/ dir
+		I don't think you need it to be a path FROM your /oddraps/ folder to /galaxies/, but that is what I'm doing
+	'''
+
 	GalName = "10210_UGC8651"
+	GalPath =  "../../../../../galaxies/"
+	
 	#find all cataloged infomation based on galaxy
 	with open('GalCatalog','r') as fobj:
 			for line in fobj:
@@ -611,7 +615,7 @@ def main():
 					GalFlux = float(info[2])
 					GalDist = float(info[3])
 					break
-	basedir = "../../../../../galaxies/"+GalDir+"/"+GalName+"/metals_proc/"
+	basedir = GalPath+GalDir+"/"+GalName+"/metals_proc/"
 	scriptr = basedir + "scriptdir/"
 	fA, fB = setFolder(basedir)	#create work folder inside gal dir, move given files into it, send back filters used in file names
 	print(fA,fB)
