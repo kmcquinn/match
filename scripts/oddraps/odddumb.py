@@ -177,8 +177,8 @@ def grabDepths(outpath):
 	return deparr
 	#returns four filter depth values
 
-def calcFit(bir, scr, filtStart):
-	def doWork(flail):
+def doWork(putin):
+		commdict, flail = putin
 		comm = commdict[flail][2]
 		p = sp.Popen(comm.split(), stdout=sp.PIPE)
 		out, err = p.communicate()
@@ -191,6 +191,8 @@ def calcFit(bir, scr, filtStart):
 			else:
 				time.sleep(60)
 				continue
+
+def calcFit(bir, scr, filtStart):
 	'''
 	this is a modified version of the calcsfh depth optimatization on oddraps
 	it will take the starting filter values in the given par file and try every variation of the weak V and I filter limits witin a given range and step size
@@ -251,8 +253,9 @@ def calcFit(bir, scr, filtStart):
 			flail = flail + 1
 			#all commands created, now run them all with pool
 	pool = mp.Pool(None)
+	putin = ((commdict, i) for i in runname)
 	reslist = []
-	r = pool.map_async(doWork, runname, callback=reslist.append)	#fills cpu cores with dowork jobs, each with different flail value from runname
+	r = pool.map_async(doWork, putin, callback=reslist.append)	#fills cpu cores with dowork jobs, each with different flail value from runname
 	r.wait()	#waits until all jobs are completed
 	for i in runname:
 		commdict[i].append(reslist[i])
