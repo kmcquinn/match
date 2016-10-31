@@ -20,10 +20,12 @@ Ensure script has all files needed in same folder:
 	sfh_* files
 	batch script to run on TACC
 	
-Edit batch file to run this script (command: python FitTesting.py)
+Edit batch file FitBatch to run this script (command: python FitTesting.py)
 	set time accordingly (currently about 30 hours for full run)
+	run through login node: "sbatch FitBatch"
 
 Failure will most probably occur in the setFolder function
+	Python error output will be shown in the console output set in FitBatch
 	Assumes the given calcsfh files and pars file are in the folders shown
 	Can probably edit this to point to the right places
 '''
