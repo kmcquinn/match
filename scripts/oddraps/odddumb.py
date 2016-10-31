@@ -186,7 +186,7 @@ def calcFit(bir, scr, filtStart):
 			check = out.splitlines()[-1]
 			if check.split()[0] == "Best":
 				fit = float(check.split()[-1][4:])
-				commdict[flail].append(fit)
+				return fit
 				break
 			else:
 				time.sleep(60)
@@ -248,29 +248,15 @@ def calcFit(bir, scr, filtStart):
 			comm = "calcsfh "+parspath+" "+scrPhot+" "+scrFake+" "+outpath+" -Kroupa -PARSEC"	#command to send out
 			commdict[flail].append(comm)
 			runname.append(flail)	#add runname to list
-			if len(runname) == 10:
-				proclist = []
-				for i in runname:
-					process = mp.Process(target =doWork, args=(i,))
-					proclist.append(process)
-				for p in proclist:
-					p.start()
-				for p in proclist:
-					p.join()
-				#if you've gotten to here, all your jobs have completed
-				for i in runname:
-					coolarr = commdict[i]
-					print(coolarr)
-					outname = coolarr[0]
-					Opath = scrstring+"outTEST"+outname
-					sp.call(["pg_cmd",Opath+".cmd",Opath+".ps"])	#create output ps file for each run
-					fitlist.append(coolarr[3])	#grab and append fit value to list
-					FiltA = str(coolarr[1][1])
-					FiltB = str(coolarr[1][3])
-					g.write(outname+"\t"+FiltA+"\t"+FiltB+"\t"+str(coolarr[3])+"\n")	#grab filter depths and write to results file
-				runname = []
 			flail = flail + 1
-	minloc, minval = min(enumerate(fitlist), key=operator.itemgetter(1))
+			#all commands created, now run them all with pool
+	pool = mp.Pool(None)
+	reslist = []
+	r = pool.map_async(dowork, runname, callback=results.append)	#fills cpu cores with dowork jobs, each with different flail value from runname
+	r.wait()	#waits until all jobs are completed
+	for i in runname:
+		commdict[i].append(reslist[i])
+	minloc, minval = min(enumerate(reslist), key=operator.itemgetter(1))
 	beststr = '%03d' % (minloc,)
 	g.write("Best run: outTEST"+beststr+", "+str(minval)+" with filter values "+str(commdict[minloc][1][1])+" "+str(commdict[minloc][1][3]))
 	g.close()
