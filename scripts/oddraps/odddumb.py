@@ -262,8 +262,9 @@ def calcFit(bir, scr, filtStart):
 	1. start all commands up, somehow save outputs in order
 	2. go through and link output array to new index in dict arr
 	'''
+	putin = [(i, commdict) for i in runname]
 	for i in runname:
-		result = pool.map_async(doWork, (i, commdict))
+		result = pool.map_async(doWork, putin)
 	pool.close()
 	pool.join()
 	print(result)
