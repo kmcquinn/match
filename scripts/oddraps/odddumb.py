@@ -186,6 +186,7 @@ def doWork(putin):
 		check = out.splitlines()[-1]
 		if check.split()[0] == "Best":
 			fit = float(check.split()[-1][4:])
+			print(flail, fit)
 			return fit
 			break
 		else:
@@ -263,6 +264,8 @@ def calcFit(bir, scr, filtStart):
 	'''
 	putin = ((commdict, i) for i in runname)
 	results = pool.map(doWork, putin)
+	pool.close()
+	pool.join()
 	print(results)
 	for i in runname:
 		commdict[i].append(results[i])
