@@ -262,12 +262,13 @@ def calcFit(bir, scr, filtStart):
 	1. start all commands up, somehow save outputs in order
 	2. go through and link output array to new index in dict arr
 	'''
-	putin = ((commdict, i) for i in runname)
-	for i in putin:
-		commdict[i[1]].append(pool.apply_async(doWork, i))
+	fitout = {}
+	for i in runname:
+		fitout[i] = pool.apply_async(doWork, (i,))
 	pool.close()
 	pool.join()
 	for i in runname:
+		commdict[i].append(fitout[i])
 		coolarr = commdict[i]
 		outname = coolarr[0]
 		Opath = scrstring+"outTEST"+outname
