@@ -178,7 +178,7 @@ def grabDepths(outpath):
 	#returns four filter depth values
 
 def doWork(putin):
-	commdict, flail = putin
+	flail, commdict = putin
 	comm = commdict[flail][2]
 	p = sp.Popen(comm.split(), stdout=sp.PIPE)
 	out, err = p.communicate()
@@ -262,11 +262,11 @@ def calcFit(bir, scr, filtStart):
 	1. start all commands up, somehow save outputs in order
 	2. go through and link output array to new index in dict arr
 	'''
-	fitout = {}
 	for i in runname:
-		fitout[i] = pool.apply_async(doWork, (i,))
+		result = pool.map_async(doWork, (i, commdict))
 	pool.close()
 	pool.join()
+	print(result)
 	for i in runname:
 		commdict[i].append(fitout[i])
 		coolarr = commdict[i]
