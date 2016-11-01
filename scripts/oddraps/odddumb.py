@@ -253,13 +253,19 @@ def calcFit(bir, scr, filtStart):
 			flail = flail + 1
 			#all commands created, now run them all with pool
 	pool = mp.Pool(None)
+	'''
+	goal here:
+	
+	have a dictionary called with integers that produces info array
+	use pool to run all commands in dict entries, write fit value as new entry in column
+	1. start all commands up, somehow save outputs in order
+	2. go through and link output array to new index in dict arr
+	'''
 	putin = ((commdict, i) for i in runname)
-	reslist = []
-	r = pool.map_async(doWork, putin, callback=reslist.append)	#fills cpu cores with dowork jobs, each with different flail value from runname
-	print(reslist)
-	r.wait()	#waits until all jobs are completed
+	results = pool.map(doWork, putin)
+	print(results)
 	for i in runname:
-		commdict[i].append(reslist[i])
+		commdict[i].append(results[i])
 		coolarr = commdict[i]
 		outname = coolarr[0]
 		Opath = scrstring+"outTEST"+outname
@@ -267,13 +273,13 @@ def calcFit(bir, scr, filtStart):
 		FiltA = str(coolarr[1][1])
 		FiltB = str(coolarr[1][3])
 		g.write(outname+"\t"+FiltA+"\t"+FiltB+"\t"+str(coolarr[3])+"\n")	#grab filter depths and write to results file
-	minloc, minval = min(enumerate(reslist), key=operator.itemgetter(1))
+	minloc, minval = min(enumerate(results), key=operator.itemgetter(1))
 	beststr = '%03d' % (minloc,)
 	g.write("Best run: outTEST"+beststr+", "+str(minval)+" with filter values "+str(commdict[minloc][1][1])+" "+str(commdict[minloc][1][3]))
 	g.close()
 	return commdict[minloc][1]
 	
-def Calcwork(comm):
+def Calcwork(comm):	
 	sp.call(comm.split())
 	return 0
 def fullCalc(bpath, fullpath, goodDepths, tbins):
