@@ -268,7 +268,7 @@ def calcFit(bir, scr, filtStart):
 	pool.join()
 	print(result)
 	for i in runname:
-		commdict[i].append(fitout[i])
+		commdict[i].append(result[i])
 		coolarr = commdict[i]
 		outname = coolarr[0]
 		Opath = scrstring+"outTEST"+outname
