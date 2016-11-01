@@ -267,6 +267,7 @@ def calcFit(bir, scr, filtStart):
 	pool.close()
 	pool.join()
 	print(result)
+	'''
 	for i in runname:
 		commdict[i].append(result[i])
 		coolarr = commdict[i]
@@ -281,6 +282,7 @@ def calcFit(bir, scr, filtStart):
 	g.write("Best run: outTEST"+beststr+", "+str(minval)+" with filter values "+str(commdict[minloc][1][1])+" "+str(commdict[minloc][1][3]))
 	g.close()
 	return commdict[minloc][1]
+	'''
 	
 def Calcwork(comm):	
 	sp.call(comm.split())
