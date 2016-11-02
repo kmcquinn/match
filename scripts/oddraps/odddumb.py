@@ -186,7 +186,6 @@ def doWork(putin):
 		check = out.splitlines()[-1]
 		if check.split()[0] == "Best":
 			fit = float(check.split()[-1][4:])
-			print(flail, fit)
 			return fit
 			break
 		else:
@@ -260,9 +259,10 @@ def calcFit(bir, scr, filtStart):
 	pool.join()
 	outputfits = result.get()
 	print(outputfits)
-	'''
-	for i in runname:
-		commdict[i].append(result[i])
+	print("length of outfits is "+str(len(outputfits)))
+	print("length of runname is "+str(len(runname)))
+	for i in range(0,len(outputfits)):
+		commdict[i].append(outputfits[i])
 		coolarr = commdict[i]
 		outname = coolarr[0]
 		Opath = scrstring+"outTEST"+outname
@@ -270,7 +270,7 @@ def calcFit(bir, scr, filtStart):
 		FiltA = str(coolarr[1][1])
 		FiltB = str(coolarr[1][3])
 		g.write(outname+"\t"+FiltA+"\t"+FiltB+"\t"+str(coolarr[3])+"\n")	#grab filter depths and write to results file
-	minloc, minval = min(enumerate(results), key=operator.itemgetter(1))
+	minloc, minval = min(enumerate(outputfits), key=operator.itemgetter(1))
 	beststr = '%03d' % (minloc,)
 	g.write("Best run: outTEST"+beststr+", "+str(minval)+" with filter values "+str(commdict[minloc][1][1])+" "+str(commdict[minloc][1][3]))
 	g.close()
