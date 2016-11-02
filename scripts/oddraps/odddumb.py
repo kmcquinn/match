@@ -54,7 +54,7 @@ def setFolder(bir):
 	copyfile(fold+cull[0], bir+"scriptdir/fake")
 	#ok so all the files we need are in our new directory, and we grabbed the filter names from the filenames to compare with the given pars file. 
 
-def editFiles(sir, afile, bfile):
+def editFiles(sir):
 	#now we need to make any needed changes to the pars file before using them in calcsfh
 	#phot: good to go
 	#fake: good to go
