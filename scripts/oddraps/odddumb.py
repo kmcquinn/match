@@ -11,24 +11,21 @@ import matplotlib.pyplot as plt
 import fnmatch
 import multiprocessing as mp
 '''
-This version is just going to get us off the ground in running analysis
-It sends every command out linerally. This includes depth optimization and hybridMC runs, which would stand the greatest improvement from parallel processing.
+HOW TO RUN ODDDUMB:
+1.) Place lastest version in same folder as GalCatalog, sfh_full res file
+2.) Edit sample batch script
+	command: "python odddumb.py NAMEofGALAXYfolder"
+	use your email, set time at ~2h
+	change job name, console output name accordingly
+3.) Run by calling "sbatch SAMPLEscript"
 
-It looks like the process of splitting this analysis into serial and parallel sections will be complex. Probably involving a hybrid of python and bash.
-
-For now, this should complete full analysis on a single galaxy.
+Upon completion:
+	/GALfolder/metals_proc/scriptdir/calctests has all cmds, ps files
+	FiltResults file gives output name, filter depths, fit value
 
 oddraps = on dwarf disks, running a python script
-
-oddraps assumes running in /metals/scripts/newodd/match/scripts/oddraps/ with needed database files
-I run with the "batchs" slrum script in that folder, with command: sbatch batchs
-
-For your given galaxy, only need to change things outlined in main()
-
-initially can only complete workflow for single galaxy at a time, time requirements
 '''
 def setFolder(bir):
-#passed
 	'''
 	hey, this guy is taking the first file it sees that fits those wildcards
 	that means if there is more than one match, any of those files is fair game for it to pull
@@ -49,15 +46,12 @@ def setFolder(bir):
 	exten = "*.gst.match"
 	cull = fnmatch.filter(inList,exten)
 	#store filter values
-	FiltA = cull[0][len(cull)-len(exten)-11:len(cull)-len(exten)-6]
-	FiltB = cull[0][len(cull)-len(exten)-5:len(cull)-len(exten)]
 	#copy phot file to script dir
 	copyfile(fold+cull[0], bir+"scriptdir/phot")
 	#find fake file in input_data folder
 	cull = fnmatch.filter(inList,"*gst.matchfake")
 	#copy fake file to script dir
 	copyfile(fold+cull[0], bir+"scriptdir/fake")
-	return FiltA, FiltB
 	#ok so all the files we need are in our new directory, and we grabbed the filter names from the filenames to compare with the given pars file. 
 
 def editFiles(sir, afile, bfile):
@@ -92,10 +86,6 @@ def editFiles(sir, afile, bfile):
 	comm = filt.find(',')
 	filtA = filt[:comm]
 	filtB = filt[comm+1:]
-	if filtA[3:] != afile[1:] or filtB[3:] != bfile[1:]:	#check to see if pars filters match file filters
-		#file name is going to have superiority here
-		filtA[3:] = afile[1:]
-		filtB[3:] = bfile[1:]
 	filtstring = str(filtA)+','+str(filtB)
 	filine[-1] = filtstring
 	p.write(' '.join([str(n) for n in filine])+"\n")
@@ -276,8 +266,11 @@ def calcFit(bir, scr, filtStart):
 	g.close()
 	return commdict[minloc][1]
 	
-def Calcwork(comm):	
-	sp.call(comm.split())
+def Calcwork(arr):
+	comm, output = arr[0], arr[1]
+	f = open(output, "wb")	
+	sp.call(comm.split(),stdout=f)
+	f.close()
 	return 0
 def fullCalc(bpath, fullpath, goodDepths, tbins):
 	#runs the full calcsfh workflow, incudes hybridMC, .ps plot of results
@@ -316,7 +309,6 @@ def fullCalc(bpath, fullpath, goodDepths, tbins):
 	part2 = " -Kroupa -PARSEC -mcdata -mcseed="
 	part3 = " -logterrsig="
 	part4 = " -mbolerrsig="
-	part5 = " > "+fullpath+"console"
 	
 	runarr = []
 	for i in range(0,50):
@@ -326,11 +318,12 @@ def fullCalc(bpath, fullpath, goodDepths, tbins):
 		out_string = "mcseed value " + str(digit) + "=" + str(rand) + "\n"
 		outfile.write(out_string)
 		outfile.close()
-		comm = part1 + digit + part2 + str(rand) + part3 + str(lgsig) + part4 + str(mbol) + part5 + digit
-		runnarr.append(comm)
+		comm = part1 + digit + part2 + str(rand) + part3 + str(lgsig) + part4 + str(mbol)
+		runnarr.append([comm, fullpath+"console"+digit])
 	pool = mp.Pool(None)
 	r = pool.map_async(Calcwork, runarr)	#fills cpu cores with dowork jobs, each with different flail value from runname
-	r.wait()
+	pool.close()
+	pool.join()
 	#combining the results using bestfit.
 	#cmd10 = ["module","load","pgplot/5.2-sl6-gfortran"]
 	#sp.call(cmd10)
@@ -569,7 +562,7 @@ def main():
 	    Information from each function is not ingelligently stored (ie saved in reference file to save time on repeat runs). I'll add this once everything works.
 	'''
 
-	GalName = "10210_UGC8651"
+	GalName = sys.argv[1]
 	#find all cataloged infomation based on galaxy
 	with open('GalCatalog','r') as fobj:
 			for line in fobj:
@@ -579,12 +572,11 @@ def main():
 					GalFlux = float(info[2])
 					GalDist = float(info[3])
 					break
-	basedir = "../../../../../galaxies/"+GalDir+"/"+GalName+"/metals_proc/"
+	basedir = "/work/04316/kmcquinn/wrangler/metals/galaxies/"+GalDir+"/"+GalName+"/metals_proc/"
 	scriptr = basedir + "scriptdir/"
-	fA, fB = setFolder(basedir)	#create work folder inside gal dir, move given files into it, send back filters used in file names
-	print(fA,fB)
+	setFolder(basedir)	#create work folder inside gal dir, move given files into it, send back filters used in file names
 	#now we need to make any needed changes to these given files before using them in calcsfh
-	Fstart = editFiles(scriptr, fA, fB)
+	Fstart = editFiles(scriptr)
 	print(Fstart)
 	#now run calcsfh with different filter values to find best depths
 	#from here on out, we are running match commands and will need to use sbatch to run efficently

@@ -3,9 +3,9 @@
 #SBATCH -o YourConsole.o%j       # output and error file name (%j expands to jobID)
 #SBATCH -n 24              # total number of mpi tasks requested, i use 24 but you can try changing it
 #SBATCH -p normal     # queue (partition) -- normal, development, etc.
-#SBATCH -t 30:00:00        # run time (hh:mm:ss) - 1.5 hours, this takes ~30h
+#SBATCH -t 02:00:00        # run time (hh:mm:ss) - 1.5 hours, this takes ~30h
 #SBATCH --mail-user=PleaseDontUse@MyEmail.Address
 #SBATCH --mail-type=begin
 #SBATCH --mail-type=end    # email me when the job finishes
 
-python FitTesting.py  		#change to fit correct script name
+python odddumb.py NameofGalaxyDir  		#change to fit correct script name
