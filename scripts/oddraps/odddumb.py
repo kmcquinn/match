@@ -275,7 +275,6 @@ def calcFit(bir, scr, filtStart):
 	g.write("Best run: outTEST"+beststr+", "+str(minval)+" with filter values "+str(commdict[minloc][1][1])+" "+str(commdict[minloc][1][3]))
 	g.close()
 	return commdict[minloc][1]
-	'''
 	
 def Calcwork(comm):	
 	sp.call(comm.split())
