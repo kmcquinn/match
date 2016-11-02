@@ -254,17 +254,8 @@ def calcFit(bir, scr, filtStart):
 			flail = flail + 1
 			#all commands created, now run them all with pool
 	pool = mp.Pool(None)
-	'''
-	goal here:
-	
-	have a dictionary called with integers that produces info array
-	use pool to run all commands in dict entries, write fit value as new entry in column
-	1. start all commands up, somehow save outputs in order
-	2. go through and link output array to new index in dict arr
-	'''
 	putin = [(i, commdict) for i in runname]
-	for i in runname:
-		result = pool.map_async(doWork, putin)
+	result = pool.map_async(doWork, putin)
 	pool.close()
 	pool.join()
 	print(result)
