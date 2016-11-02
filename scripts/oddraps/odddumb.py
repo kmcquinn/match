@@ -258,7 +258,8 @@ def calcFit(bir, scr, filtStart):
 	result = pool.map_async(doWork, putin)
 	pool.close()
 	pool.join()
-	print(result)
+	outputfits = result.get()
+	print(outputfits)
 	'''
 	for i in runname:
 		commdict[i].append(result[i])
