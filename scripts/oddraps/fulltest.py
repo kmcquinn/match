@@ -329,7 +329,7 @@ def fullCalc(bpath, fullpath, goodDepths, tbins):
 		outfile.write(out_string)
 		outfile.close()
 		comm = part1 + digit + part2 + str(rand) + part3 + str(lgsig) + part4 + str(mbol)
-		runnarr.append([comm, fullpath+"console"+digit])
+		runarr.append([comm, fullpath+"console"+digit])
 	pool = mp.Pool(None)
 	pool.map_async(Calcwork, runarr)	#fills cpu cores with dowork jobs, each with different flail value from runname
 	pool.close()
