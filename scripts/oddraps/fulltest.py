@@ -278,7 +278,7 @@ def fullCalc(bpath, fullpath, goodDepths, tbins):
 	photLoc = bpath+"phot"
 	fakeLoc = bpath+"fake"
 	#create needed pars file, run full calcsfh script
-	makePars(bpath, fullpath+"pars", goodDepths, tbins)
+	makePars(fullpath, fullpath+"pars", goodDepths, tbins)
 	#need to figure out values for logterrsig, mbolerrsig
 	g = open(fullpath+"pars", 'r')
 	Mt = float(g.readline().split()[0])
