@@ -580,16 +580,17 @@ def main():
 					break
 	basedir = "/work/04316/kmcquinn/wrangler/metals/galaxies/"+GalDir+"/"+GalName+"/metals_proc/"
 	scriptr = basedir + "scriptdir/"
-	setFolder(basedir)	#create work folder inside gal dir, move given files into it, send back filters used in file names
+	#setFolder(basedir)	#create work folder inside gal dir, move given files into it, send back filters used in file names
 	#now we need to make any needed changes to these given files before using them in calcsfh
-	Fstart = editFiles(scriptr)
-	print(Fstart)
+	#Fstart = editFiles(scriptr)
+	#print(Fstart)
 	#now run calcsfh with different filter values to find best depths
 	#from here on out, we are running match commands and will need to use sbatch to run efficently
-	bestDepth = calcFit(basedir, scriptr, Fstart)
-	print(bestDepth)
+	#bestDepth = calcFit(basedir, scriptr, Fstart)
+	#print(bestDepth)
+	bestDepth = [19.71, 27.76, 19.22, 26.87]
 	#now we can run the full calcsfh script for each timebin
-	#fullCalc(scriptr, basedir+"sfh_fullres/", bestDepth, "sfh_fullres")
+	fullCalc(scriptr, basedir+"sfh_fullres/", bestDepth, "sfh_fullres")
 	#fullCalc(scriptr, basedir+"sfh_no_res/", bestDepth, "sfh_no_res")
 	#fullCalc(scriptr, basedir+"sfh_starburst_v1res/", bestDepth, "sfh_starburst_v1res")
 	#fullCalc(scriptr, basedir+"sfh_starburst_v2res/", bestDepth, "sfh_starburst_v2res")
