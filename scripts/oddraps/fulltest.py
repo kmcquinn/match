@@ -274,11 +274,15 @@ def Calcwork(arr):
 	f.close()
 	return 0
 def fullCalc(bpath, fullpath, goodDepths, tbins):
+	'''
+	bpath -> /scriptdir/
+	fullpath -> /sfh_fullres/
+	'''
 	#runs the full calcsfh workflow, incudes hybridMC, .ps plot of results
 	photLoc = bpath+"phot"
 	fakeLoc = bpath+"fake"
 	#create needed pars file, run full calcsfh script
-	makePars(fullpath, fullpath+"pars", goodDepths, tbins)
+	makePars(bpath+"../", fullpath+"pars", goodDepths, tbins)
 	#need to figure out values for logterrsig, mbolerrsig
 	g = open(fullpath+"pars", 'r')
 	Mt = float(g.readline().split()[0])
