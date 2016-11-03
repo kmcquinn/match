@@ -305,7 +305,7 @@ def fullCalc(bpath, fullpath, goodDepths, tbins):
 	minloc, minval = min(enumerate(err), key=operator.itemgetter(1))
 	lgsig, mbol = vals[minloc][0], vals[minloc][1]
 	#run calcsfh once for use with hybridMC
-	comm = "calcsfh "+fullpath+"pars "+photLoc+" "+fakeLoc+" out -Kroupa -PARSEC -mcdata"
+	comm = "calcsfh "+fullpath+"pars "+photLoc+" "+fakeLoc+" +"fullpath+"out -Kroupa -PARSEC -mcdata"
 	f = open(fullpath+"console.txt", "wb")	
 	sp.call(comm.split(),stdout=f)
 	f.close()
