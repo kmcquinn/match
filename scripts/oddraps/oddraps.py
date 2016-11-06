@@ -597,6 +597,8 @@ def main():
 	bestDepth = calcFit(basedir, scriptr, Fstart)
 	#print(bestDepth)
 	#now we can run the full calcsfh script for each timebin
+	comm = "mkdir "+basedir+"sfh_fullres/"
+	sp.call(comm.split())
 	fullCalc(scriptr, basedir+"sfh_fullres/", bestDepth, "sfh_fullres")
 	#fullCalc(scriptr, basedir+"sfh_no_res/", bestDepth, "sfh_no_res")
 	#fullCalc(scriptr, basedir+"sfh_starburst_v1res/", bestDepth, "sfh_starburst_v1res")
