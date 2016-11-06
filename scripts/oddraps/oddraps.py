@@ -9,46 +9,57 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import fnmatch
+import multiprocessing as mp
+import os
 '''
-script will currently hang if sbatch job fails
-need to finetune time listed on batch scripts
+HOW TO RUN ODDRAPS:
+1.) Place lastest version in same folder as GalCatalog, sfh_full res file, teffdata file
+2.) Edit sample batch script
+	command: "python oddraps.py NAMEofGALAXYfolder"
+	use your email, set time at ~48h
+	may want to split calcFit and FullCalc into two separate jobs
+		this is easily done by commenting out the functions you dont want for each script submission
+	change job name, console output name accordingly
+3.) Run by calling "sbatch SAMPLEscript"
+
+Upon completion:
+	/GALfolder/metals_proc/scriptdir/calctests has all cmds, ps files
+	FiltResults file gives output name, filter depths, fit value
+	/sfh_*timebin*/ folders have all fullCalc results.
+		may need to run command to generate out.hybrid.ps
 
 oddraps = on dwarf disks, running a python script
-
-oddraps assumes running in /metals/scripts/oddraps/ with needed database files
-initially can only complete workflow for single galaxy at a time, time requirements
-oddraps is called with an sbatch script that will probably need 24 hours to be safe
-	runs on single node to minimize computational requirements
-	all organizational instructions (folder and file creation, grabbing values from files, etc.) run on python node
-	all computationally costly actions run by creating sbatchs within script
-	oddraps waits for job complete through while loops and bash calls
 '''
-
 def setFolder(bir):
+	'''
+	hey, this guy is taking the first file it sees that fits those wildcards
+	that means if there is more than one match, any of those files is fair game for it to pull
+	sorry
+	'''
 	#this creates a directory in the work folder and moves the given files (pars,phot,fake) over for safety
 	#first setup folder in gal dir to build files
 	sp.call(["mkdir",bir+"scriptdir/"])
 	#find pars file in input_data folder
-	inList = sp.check_output(["ls",bir+"input_data/"]).splitlines()
-	cull = fnmatch.filter(inList,"matchpars231")
-	copyfile(bir+"input_data/"+cull[0], bir+"scriptdir/basepars")
-	#find phot file in input_data folder
+	fold = bir+"../conf_new_dol/"
+	inList = sp.check_output(["ls",fold]).splitlines()
+	cull = fnmatch.filter(inList,"*matchpars231")
+	copyfile(fold+cull[0], bir+"scriptdir/basepars")
+        #find phot file in input_data folder
 	#NOTE: Here I will also store the written filter values for editFiles to use
-	exten = ".gst.match"
+	fold = bir+"../proc_new_dol/"
+	inList = sp.check_output(["ls",fold]).splitlines()
+	exten = "*.gst.match"
 	cull = fnmatch.filter(inList,exten)
 	#store filter values
-	FiltA = cull[len(cull)-len(exten)-11:len(cull)-len(exten)-6]
-	FiltB = cull[len(cull)-len(exten)-5:len(cull)-len(exten)]
 	#copy phot file to script dir
-	copyfile(bir+"input_data/"+cull[0], bir+"scriptdir/phot")
+	copyfile(fold+cull[0], bir+"scriptdir/phot")
 	#find fake file in input_data folder
-	cull = fnmatch.filter(inList,".matchfake")
+	cull = fnmatch.filter(inList,"*gst.matchfake")
 	#copy fake file to script dir
-	copyfile(bir+"input_data/"+cull[0], bir+"scriptdir/fake")
-	return FiltA, FiltB
+	copyfile(fold+cull[0], bir+"scriptdir/fake")
 	#ok so all the files we need are in our new directory, and we grabbed the filter names from the filenames to compare with the given pars file. 
 
-def editFiles(sir, afile, bfile):
+def editFiles(sir):
 	#now we need to make any needed changes to the pars file before using them in calcsfh
 	#phot: good to go
 	#fake: good to go
@@ -80,10 +91,6 @@ def editFiles(sir, afile, bfile):
 	comm = filt.find(',')
 	filtA = filt[:comm]
 	filtB = filt[comm+1:]
-	if filtA[3:] != afile[1:] or filtB[3:] != bfile[1:]:	#check to see if pars filters match file filters
-		#file name is going to have superiority here
-		filtA[3:] = afile[1:]
-		filtB[3:] = bfile[1:]
 	filtstring = str(filtA)+','+str(filtB)
 	filine[-1] = filtstring
 	p.write(' '.join([str(n) for n in filine])+"\n")
@@ -149,38 +156,6 @@ def makePars(basepath, newpath, depths, times):
 	p.close()
 	g.close()
 
-def runBatch(comm, name, time):
-	#creates batch script w/ given command and runs, waiting for completion
-	#first need to make the file
-	p = open("basebatch.txt", "r")
-	g = open("script","w")
-	g.write(p.readline())
-	g.write(p.readline()[:-1] + name + "\n")
-	g.write(p.readline()[:-1] + name + ".o%j" + "\n")
-	g.write(p.readline()[:-1] + "1" + "\n")
-	g.write(p.readline())
-	g.write(p.readline()[:-1] + time + "\n")
-	g.write(p.readline())
-	g.write(comm)
-	p.close()
-	g.close()
-	
-	#now need to queue script and find job id used to check status
-	sp.call(["sbatch","script",">","jobname.txt"])
-	time.sleep(10)	#sleep to wait for job to be created
-	line = sp.check_output(['tail', '-1', "jobname.txt"])
-	jobnum = int(line.split()[-1])
-	
-	#check for job completion every 30 seconds
-	while True:
-		sp.call(["squeue","--job",jobnum,">","joblist.txt"])
-		g = open("joblist.txt")
-		g.readline()	#read header
-		line = g.readline().split()
-		if line[4] == "CD":
-			break
-		time.sleep(30)
-
 def grabDepths(outpath):
 	#only for calcsfh pars files
 	deparr = []
@@ -197,52 +172,27 @@ def grabDepths(outpath):
 	return deparr
 	#returns four filter depth values
 
-def useLauncher(name,commarr, time):
-	#makes launcher script with given commands, runs and waits for completion
-	#first make launcher.slurm file
-	g = open("pylaunch.slurm","w")
-	#header info
-	with open("launchhead.txt","r") as fobj:
-		for line in fobj:
-			g.write(line)
-	#body info
-	b = open("launchbody.txt","r")
-	g.write(b.readline()[:-1] +name+"\n")
-	g.write(b.readline()[:-1] +str(math.ceil(float(len(commarr))/16.0))+"\n") #one core per command
-	g.write(b.readline()[:-1] +str(len(commarr))+"\n")
-	g.write(b.readline())
-	g.write(b.readline()[:-1] +name+".o%j"+"\n")
-	g.write(b.readline()[:-1] + time + "\n")
-	b.close()
-	#footer info
-	with open("launchfoot.txt","r") as fobj:
-		for line in fobj:
-			g.write(line)
-	g.close()
-	
-	#now need to build paramlist
-	p = open("paramlist","w")
-	for i in comarr:
-		p.write(i + "\n")
-	p.close()
-	
-	#now launch slurm script, grab job id for tracking
-	sp.call(["sbatch","pylaunch.slurm",">","jobname.txt"])
-	time.sleep(10)	#sleep to wait for job to be created
-	line = sp.check_output(['tail', '-1', "jobname.txt"])
-	jobnum = int(line.split()[-1])
-	
-	#check for job completion every 30 seconds
+def doWork(putin):
+	flail, commdict = putin
+	comm = commdict[flail][2]
+	p = sp.Popen(comm.split(), stdout=sp.PIPE)
+	out, err = p.communicate()
 	while True:
-		sp.call(["squeue","--job",jobnum,">","joblist.txt"])
-		g = open("joblist.txt")
-		g.readline()	#read header
-		line = g.readline().split()
-		if line[4] == "CD":
+		check = out.splitlines()[-1]
+		if check.split()[0] == "Best":
+			fit = float(check.split()[-1][4:])
+			return fit
 			break
-		time.sleep(30)
+		else:
+			time.sleep(60)
+			continue
 
 def calcFit(bir, scr, filtStart):
+	'''
+	this is a modified version of the calcsfh depth optimatization on oddraps
+	it will take the starting filter values in the given par file and try every variation of the weak V and I filter limits witin a given range and step size
+	Each CMD's filter and resulting fit is given in the FiltResults file located in the calctests folder
+	'''
 	#runs simple calcsfh many times to find filter depths that produce best fit
 	#create folder to house calcsfh test runs
 	sp.call(["mkdir",scr+"calctests"])
@@ -254,102 +204,89 @@ def calcFit(bir, scr, filtStart):
 	#Need to grab initial filter values from the editFiles function
 	sold = []	#stores base fit, start depths
 	sold.append(0)
-	sold.append(filtStart)
+	sold = sold + filtStart
 	
 	#before starting all the runs, I need to run calcsfh once with these starting depths to get a baseline to compare all the permutations with
 	#first step is to create the pars file with the starting depths
+	'''
 	makePars(bir, scrstring+"parsFirst", sold[1:], "sfh_fullres")
-	comm = "calcsfh "+scrstring+"parsFirst "+scrPhot+" "+scrFake+" "+scrstring+"outFirst -Kroupa -PARSEC > "+scrstring+"consoleFirst.txt"
-	runBatch(comm, "FirstCalc", "00:30:00")
+	comm = "calcsfh "+scrstring+"parsFirst "+scrPhot+" "+scrFake+" "+scrstring+"outFirst -Kroupa -PARSEC"
+	fitstr = sp.check_output(comm.split()).splitlines()[-1].split()[-1]
 	#check consolefile to record starting fit value
-	fitstr = subprocess.check_output(['tail', '-1', scrstring+"consoleFirst.txt"]).split()[-1]
 	#format: 'fit=3573.515152'
 	fitval = float(fitstr[4:])
+	print("fitval is: "+str(fitval))
 	#record this value to sold array
 	sold[0] = fitval
-	delta = .5		#choose how much values differ between runs
-	runnum = 0		#keeps track of number of completed cycles
-	maxrun = 0
-	while True:		#will stop loop 'manually' inside once end of cycle yield no positive change in lum
-		if runnum >= 100:
-			print('you need a vacation')
-			maxrun = 99
-			toret = grabDepths(scrstring+"outCyc099")
-			#define function that opens out file, returns filter list
-			break
-		flail = 0	#keeps track of permutation number
-		fitlist = []	#records fit in given run
-		permlist = []	#records filter values in given run
-		commarr = []	#records commands to run at once with launcher
-		for w in range(-1,2):	#go through each perm of var inc/dec
-			for x in range(-1,2):
-				for y in range(-1,2):
-					for z in range(-1,2):
-						#goal: create all pars files, run all jobs at one at end of loop through launcher
-						strflail = '%03d' % (flail,)		#convert run number to string for out files
-						parspath = scrstring+"calcparsTEST"+strflail
-						outpath = scrstring+"outTEST"+strflail
-						consolepath = scrstring+"consoleTEST"+strflail
-						totest = sold[1:]			#grab values stored at end of previous cycle
-						totest[0] = totest[0] + w * delta	#inc, dec, or stay constant depending on index values
-						totest[1] = totest[1] + x * delta
-						totest[2] = totest[2] + y * delta
-						totest[3] = totest[3] + z * delta
-						makePars(bir, parspath, totest, "sfh_fullres")	#make pars file with 'test' to indicate temp file
-						comm = "calcsfh "+parspath+" "+scrPhot+" "+scrFake+" "+outpath+" -Kroupa -PARSEC > "+consolepath
-						commarr.append(comm)
-						permlist.append(totest)
-						flail = flail + 1
-		#all commands, pars files for this cycle written.
-		#now run with launcher script
-		useLauncher("DepthRuns", commarr, "00:06:00")
-		#now go back through console outputs to record fits for each run
-		for i in range(0, flail):
-			strflail = '%03d' % (i,)
-			consolepath = scrstring+"consoleTEST"+strflail
-			Tfitline = subprocess.check_output(['tail', '-1', consolepath]).split()[-1]
-			Tfitval = float(Tfitline[4:])
-			fitlist.append(Tfitval)		#record fit in list entry
-		minloc, minval = min(enumerate(fitlist), key=operator.itemgetter(1))		#find highest lum value and location after all trails complete
-		runstr = '%03d' % (runnum,)			#convert cycle number to str for out files		
-		if minval < sold[0]:				#if highest found value, exceeds prev number, this is sucessful run
-			sold[0] = minval			#new stored lum value
-			sold[1:] = permlist[minloc]		#new stored filter values
-			valstr = '%03d' % (minloc,)		#store best run number as string for out files
-			copyfile(scrstring+'calcparsTEST'+valstr, scrstring+'calcparsCyc'+runstr)	#copy temp pars of best run to new file
-			copyfile(scrstring+'outTEST'+valstr, scrstring+'outCyc'+runstr)				#copy temp out of best run to new file
-			runnum = runnum + 1
-		else:
-			maxrun = runnum - 1
-			toret = grabDepths(scrstring+"outCyc"+'%03d' % (runnum - 1,))		
-			break
-	#might be cool to create plot of fit vs. trial number to ensure it is improving/not topping off
-	#start by finding number of outCyc files 
-	xarr = []
-	yarr = []
-	for i in range(0, maxrun + 1):
-		istr = '%03d' % (i,)
-		xarr.append(i)
-		yline = subprocess.check_output(['tail', '-1', scrstring+'outCyc'+istr]).split()[-1]
-		yval = float(yline[4:])
-		yarr.append(yval)
-	plt.scatter(xarr, yarr, s=0.2)
-	plt.xlabel('cycle number')
-	plt.ylabel('best fit value')
-	plt.title('Minimizing fit value over many cycles')
-	plt.savefig(scrstring+"fitPlot.png")	
-	plt.close()
-	return toret
+	'''
+	delta = .05		#choose how much values differ between runs
+	maxdelta = .25		#choose max deviation from start values
+	runnum = 1		#keeps track of number of completed cycles
+	maxrun = int(maxdelta/delta)
 	
-	#so in the /scriptdir/calctests directory we've run a bunch of different calcsfh's that have produced a set of depth values that minimize the fit value
-	#we've also created a plot showing the best fit value vs fit cycle. this is to ensure that the fit is actually dropping as the tests are run
-
+	flail = 0
+	commdict = {} #commdict[flail] = [strflail, filtList, command, fit]
+	runname = []
+	fitlist = []
+	g = open(scrstring+"FiltResults","w")
+	g.write("Run Number\tDepth1\tDepth2\tFit Value\n")
+	for i in range(-maxrun,maxrun+1):
+		for j in range(-maxrun,maxrun+1):
+			strflail = '%03d' % (flail,)		#convert run number to string for out files
+			commdict[flail] = [strflail]
+			parspath = scrstring+"calcparsTEST"+strflail	#paths to calcsfh files
+			outpath = scrstring+"outTEST"+strflail
+			consolepath = scrstring+"consoleTEST"+strflail
+			totest = sold[1:]	#changing depth values up or down by delta
+			totest[1] = totest[1] + i * delta
+			totest[3] = totest[3] + j * delta
+			commdict[flail].append(totest)
+			makePars(bir, parspath, totest, "sfh_fullres")	#make pars file with 'test' to indicate temp file
+			comm = "calcsfh "+parspath+" "+scrPhot+" "+scrFake+" "+outpath+" -Kroupa -PARSEC"	#command to send out
+			commdict[flail].append(comm)
+			runname.append(flail)	#add runname to list
+			flail = flail + 1
+			#all commands created, now run them all with pool
+	pool = mp.Pool(None)
+	putin = [(i, commdict) for i in runname]
+	result = pool.map_async(doWork, putin)
+	pool.close()
+	pool.join()
+	outputfits = result.get()
+	print(outputfits)
+	print("length of outfits is "+str(len(outputfits)))
+	print("length of runname is "+str(len(runname)))
+	for i in range(0,len(outputfits)):
+		commdict[i].append(outputfits[i])
+		coolarr = commdict[i]
+		outname = coolarr[0]
+		Opath = scrstring+"outTEST"+outname
+		sp.call(["pg_cmd",Opath+".cmd",Opath+".ps"])	#create output ps file for each run
+		FiltA = str(coolarr[1][1])
+		FiltB = str(coolarr[1][3])
+		g.write(outname+"\t"+FiltA+"\t"+FiltB+"\t"+str(coolarr[3])+"\n")	#grab filter depths and write to results file
+	minloc, minval = min(enumerate(outputfits), key=operator.itemgetter(1))
+	beststr = '%03d' % (minloc,)
+	g.write("Best run: outTEST"+beststr+", "+str(minval)+" with filter values "+str(commdict[minloc][1][1])+" "+str(commdict[minloc][1][3]))
+	g.close()
+	return commdict[minloc][1]
+	
+def Calcwork(arr):
+	comm, output = arr[0], arr[1]
+	f = open(output, "wb")	
+	sp.call(comm.split(),stdout=f)
+	f.close()
+	return 0
 def fullCalc(bpath, fullpath, goodDepths, tbins):
+	'''
+	bpath -> /scriptdir/
+	fullpath -> /sfh_fullres/
+	'''
 	#runs the full calcsfh workflow, incudes hybridMC, .ps plot of results
-	photLoc = bpath+"scriptdir/phot"
-	fakeLoc = bpath+"scriptdir/fake"
+	photLoc = bpath+"phot"
+	fakeLoc = bpath+"fake"
 	#create needed pars file, run full calcsfh script
-	makePars(bpath, fullpath+"pars", goodDepths, tbins)
+	makePars(bpath+"../", fullpath+"pars", goodDepths, tbins)
 	#need to figure out values for logterrsig, mbolerrsig
 	g = open(fullpath+"pars", 'r')
 	Mt = float(g.readline().split()[0])
@@ -364,6 +301,7 @@ def fullCalc(bpath, fullpath, goodDepths, tbins):
 	vals = []
 ##This is a bad way to calculate error
 	with open('teffdata', 'r') as fobj:
+		fobj.readline()
 		for line in fobj:
 			row = line.split()
 			vals.append([float(row[2]), float(row[3])])
@@ -371,19 +309,22 @@ def fullCalc(bpath, fullpath, goodDepths, tbins):
 	minloc, minval = min(enumerate(err), key=operator.itemgetter(1))
 	lgsig, mbol = vals[minloc][0], vals[minloc][1]
 	#run calcsfh once for use with hybridMC
-	comm = "calcsfh "+fullpath+"pars "+photLoc+" "+fakeLoc+" out -Kroupa -PARSEC -mcdata > "+fullpath+"console.txt"
-	runBatch(comm, "FHybCalc", "00:30:00")
+	comm = "calcsfh "+fullpath+"pars "+photLoc+" "+fakeLoc+" "+fullpath+"out -Kroupa -PARSEC -mcdata"
+	f = open(fullpath+"console.txt", "wb")	
+	sp.call(comm.split(),stdout=f)
+	f.close()
 	#run hybridMC 1000 times
-	comm = "hybridMC "+fullpath+"out.dat "+fullpath+"out.mcmc -tint=2.0 -nmc=10000 -dt=0.015 > "+fullpath+"hybrid_console.txt"
-	runBatch(comm, "HyMCCalc", "06:00:00")
+	comm = "hybridMC "+fullpath+"out.dat "+fullpath+"out.mcmc -tint=2.0 -nmc=10000 -dt=0.015"
+	f = open(fullpath+"hybrid_console.txt", "wb")	
+	sp.call(comm.split(),stdout=f)
+	f.close()
 	
 	part1 = "calcsfh "+fullpath+"pars "+photLoc+" "+fakeLoc+" "+fullpath+"out_"
 	part2 = " -Kroupa -PARSEC -mcdata -mcseed="
 	part3 = " -logterrsig="
 	part4 = " -mbolerrsig="
-	part5 = " > "+fullpath+"console"
 	
-	comarr = []
+	runarr = []
 	for i in range(0,50):
 		rand = random.randint(0,5000)
 		digit = '%02d' % (i,)
@@ -391,26 +332,26 @@ def fullCalc(bpath, fullpath, goodDepths, tbins):
 		out_string = "mcseed value " + str(digit) + "=" + str(rand) + "\n"
 		outfile.write(out_string)
 		outfile.close()
-		comarr.append(part1 + digit + part2 + str(rand) + part3 + str(lgsig) + part4 + str(mbol) + part5 + digit)
-	useLauncher("DepthRuns", commarr, "06:00:00")	
+		comm = part1 + digit + part2 + str(rand) + part3 + str(lgsig) + part4 + str(mbol)
+		runarr.append([comm, fullpath+"console"+digit])
+	pool = mp.Pool(None)
+	pool.map_async(Calcwork, runarr)	#fills cpu cores with dowork jobs, each with different flail value from runname
+	pool.close()
+	pool.join()
 	#combining the results using bestfit.
-	cmd10 = ["module","load","pgplot/5.2-sl6-gfortran"]
-	sp.call(cmd10)
-	cmd1 = "zcombine "+fullpath+"out > "+fullpath+"out.zc"
-	cmd2 = "zcombine -unweighted -medbest -jeffreys -best="+fullpath+"out.zc "+fullpath+"out.mcmc > "+fullpath+"out.mcmc.zc"
-	cmd3 = "zcombine -unweighted -medbest -best="+fullpath+"out.zc "+fullpath+"out_?? > "+fullpath+"out.sys.zc"
-	cmd4 = "zcmerge "+fullpath+"out.zc "+fullpath+"out.mcmc.zc "+fullpath+"out.sys.zc -absolute > "+fullpath+"out.final"
-	cmd5 = "pg_cmd "+fullpath+"out.cmd "+fullpath+"out.ps -zclin="+fullpath+"out.final -zclog="+fullpath+"out.final"
-	runBatch(cmd1, "comb1", "00:05:00")
-	runBatch(cmd2, "comb2", "00:05:00")
-	runBatch(cmd3, "comb3", "00:05:00")
-	runBatch(cmd4, "comb4", "00:05:00")
-	runBatch(cmd5, "comb5", "00:05:00")
+	#cmd10 = ["module","load","pgplot/5.2-sl6-gfortran"]
+	#sp.call(cmd10)
+	comarr = []
+	comarr.append("zcombine "+fullpath+"out > "+fullpath+"out.zc")
+	comarr.append("zcombine -unweighted -medbest -jeffreys -best="+fullpath+"out.zc "+fullpath+"out.mcmc > "+fullpath+"out.mcmc.zc")
+	comarr.append("zcombine -unweighted -medbest -best="+fullpath+"out.zc "+fullpath+"out_?? > "+fullpath+"out.sys.zc")
+	comarr.append("zcmerge "+fullpath+"out.zc "+fullpath+"out.mcmc.zc "+fullpath+"out.sys.zc -absolute > "+fullpath+"out.final")
+	comarr.append("pg_cmd "+fullpath+"out.cmd "+fullpath+"out.ps -zclin="+fullpath+"out.final -zclog="+fullpath+"out.final")
 	#combining wih hybrid uncertainities for comparison
-	cmd6 = "zcmerge "+fullpath+"out.zc "+fullpath+"out.mcmc.zc -absolute > "+fullpath+"out.hybrid.final"
-	cmd7 = "pg_cmd "+fullpath+"out.cmd "+fullpath+"out.hybrid.ps -zclin="+fullpath+"out.hybrid.final -zclog="+fullpath+"out.hybrid.final"
-	runBatch(cmd6, "comb6", "00:05:00")
-	runBatch(cmd7, "comb7", "00:05:00")
+	comarr.append("zcmerge "+fullpath+"out.zc "+fullpath+"out.mcmc.zc -absolute > "+fullpath+"out.hybrid.final")
+	comarr.append("pg_cmd "+fullpath+"out.cmd "+fullpath+"out.hybrid.ps -zclin="+fullpath+"out.hybrid.final -zclog="+fullpath+"out.hybrid.final")
+	for i in comarr:
+		os.system(i)
 	
 	#so we have created the pars file used in the main calcsfh runs, and completed a full calcsfh analysis of this galaxy
 	#a plot has been created showing the fit and uncertainties
@@ -483,7 +424,7 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt):
 		for line in fobj:
 			t.write(line)
 	comm = 'fake '+pwd+'parstest '+pwd+'outtest -full -KROUPA -PARSEC'
-	useBatch(comm, "faketest", "00:05:00")
+	sp.call(comm.split())
 	sold = []
 	sold.append(calclum(pwd+"outtest"))
 	sold = sold + goodfilt	#list has starting lum and starting filter values
@@ -497,8 +438,7 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt):
 			break
 		flail = 0	#keeps track of permutation number
 		lumlist = []	#records lum in given run
-		permlist = []	#records filter values in given run
-		commlist = []	
+		permlist = []	#records filter values in given run	
 		for w in range(-1,2):	#go through each perm of var inc/dec
 			for x in range(-1,2):
 				for y in range(-1,2):
@@ -512,9 +452,8 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt):
 						permlist.append(totest)
 						makeFakePars(pwd, 'TEST'+strflail, totest)	#make pars file with 'test' to indicate temp file
 						comm = 'fake '+pwd+'fakepars'+'TEST'+strflail+'.txt'+' '+pwd+'out'+'TEST'+strflail+' -full -KROUPA -PARSEC'
-						commlist.append(comm)
+						sp.call(comm.split())
 						flail = flail + 1
-		useLauncher("fakeruns", commarr, "00:02:00")
 		for i in range(0, flail):
 			strflail = '%03d' % (flail,)
 			lumlist.append(calclum(pwd+'outTEST'+strflail, galvals[1]))	#record total luminosity in list entry
@@ -622,33 +561,48 @@ def calclum(path_to_fakeout, galdist):
 
 
 def main():
-	GalName = "10210_UGC8651"
+	'''
+	Your galaxy run needs to change:
+	1.) GalName to the folder name of your galaxy
+	2.) basedir: change if you happen to be in the /oddraps/ folder in a different directory that what I assume.
+		-Change so current directory connects to metals_proc for your gal as shown
+	3.) Comment out or add what functions needed for your analysis
+		-setFolder: creates folder for our use, moves given phot, fake, pars files. Returns filter names given in phot file name
+		-editFiles: edits given pars file to work with current calcsfh version. overwrites filter names in pars file if different to file name. Returns filter depths found in given pars file
+		-calcFit: Generates a bunch of different calcsfh runs with different filter depths centered around those given. Produces FiltResults file to connect output files with filter and fit values. Also finds the run with the lowest fit value. Returns the filter values that produced the lowest fit
+		-fullCalc: MC runs for given filter depths and timebin. Also combines and produces all needed .ps outputs
+		-fullFake: Finds IRAC filter depths that produce highest "fake" luminosity for galaxy. Compares with known magnitude of gal, produces M/L ratio
+	    You will need setFolder and editFiles the first time on a given galaxy in order to run any other functions
+	    Information from each function is not ingelligently stored (ie saved in reference file to save time on repeat runs). I'll add this once everything works.
+	'''
+
+	GalName = sys.argv[1]
 	#find all cataloged infomation based on galaxy
 	with open('GalCatalog','r') as fobj:
 			for line in fobj:
 				info = line.split()
 				if info[0] == GalName:
-					GalDir = float(info[1])
+					GalDir = info[1]
 					GalFlux = float(info[2])
 					GalDist = float(info[3])
 					break
-	basedir = "/work/04316/kmcquinn/wrangler/metals/galaxies/acs/"+GalName+"/metals_proc/"	#store work directory of this galaxy
-	basedir = "../../galaxies/"+GalDir+"/"+GalName+"/metals_proc/"
+	basedir = "/work/04316/kmcquinn/wrangler/metals/galaxies/"+GalDir+"/"+GalName+"/metals_proc/"
 	scriptr = basedir + "scriptdir/"
-	fA, fB = setFolder(basedir)	#create work folder inside gal dir, move given files into it, send back filters used in file names
+	setFolder(basedir)	#create work folder inside gal dir, move given files into it, send back filters used in file names
 	#now we need to make any needed changes to these given files before using them in calcsfh
-	Fstart = editFiles(scriptdir, fA, fB)
+	Fstart = editFiles(scriptr)
+	#print(Fstart)
 	#now run calcsfh with different filter values to find best depths
-
 	#from here on out, we are running match commands and will need to use sbatch to run efficently
 	bestDepth = calcFit(basedir, scriptr, Fstart)
+	#print(bestDepth)
 	#now we can run the full calcsfh script for each timebin
 	fullCalc(scriptr, basedir+"sfh_fullres/", bestDepth, "sfh_fullres")
-	fullCalc(scriptr, basedir+"sfh_no_res/", bestDepth, "sfh_no_res")
-	fullCalc(scriptr, basedir+"sfh_starburst_v1res/", bestDepth, "sfh_starburst_v1res")
-	fullCalc(scriptr, basedir+"sfh_starburst_v2res/", bestDepth, "sfh_starburst_v2res")
+	#fullCalc(scriptr, basedir+"sfh_no_res/", bestDepth, "sfh_no_res")
+	#fullCalc(scriptr, basedir+"sfh_starburst_v1res/", bestDepth, "sfh_starburst_v1res")
+	#fullCalc(scriptr, basedir+"sfh_starburst_v2res/", bestDepth, "sfh_starburst_v2res")
 	#all calcsfh runs have completed. Now to run fake to compute mass/light ratio
-	fullFake(basedir, scriptr, basedir+"fakes/", [GalFlux,GalDist], bestDepth)
+	#fullFake(basedir, scriptr, basedir+"fakes/", [GalFlux,GalDist], bestDepth)
 	
 if __name__ == "__main__":
     main()
