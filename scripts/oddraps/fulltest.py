@@ -592,7 +592,7 @@ def main():
 	#from here on out, we are running match commands and will need to use sbatch to run efficently
 	#bestDepth = calcFit(basedir, scriptr, Fstart)
 	#print(bestDepth)
-	bestDepth = [19.71, 27.76, 19.22, 26.87]
+	bestDepth = [18.88, 27.63, 18.38, 26.88]
 	#now we can run the full calcsfh script for each timebin
 	fullCalc(scriptr, basedir+"sfh_fullres/", bestDepth, "sfh_fullres")
 	#fullCalc(scriptr, basedir+"sfh_no_res/", bestDepth, "sfh_no_res")
