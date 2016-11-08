@@ -12,17 +12,21 @@ import fnmatch
 import multiprocessing as mp
 import os
 '''
-HOW TO RUN ODDDUMB:
-1.) Place lastest version in same folder as GalCatalog, sfh_full res file
+HOW TO RUN ODDRAPS:
+1.) Place lastest version in same folder as GalCatalog, sfh_full res file, teffdata file
 2.) Edit sample batch script
-	command: "python odddumb.py NAMEofGALAXYfolder"
-	use your email, set time at ~2h
+	command: "python oddraps.py NAMEofGALAXYfolder"
+	use your email, set time at ~48h
+	may want to split calcFit and FullCalc into two separate jobs
+		this is easily done by commenting out the functions you dont want for each script submission
 	change job name, console output name accordingly
 3.) Run by calling "sbatch SAMPLEscript"
 
 Upon completion:
 	/GALfolder/metals_proc/scriptdir/calctests has all cmds, ps files
 	FiltResults file gives output name, filter depths, fit value
+	/sfh_*timebin*/ folders have all fullCalc results.
+		may need to run command to generate out.hybrid.ps
 
 oddraps = on dwarf disks, running a python script
 '''
@@ -592,8 +596,10 @@ def main():
 	#from here on out, we are running match commands and will need to use sbatch to run efficently
 	#bestDepth = calcFit(basedir, scriptr, Fstart)
 	#print(bestDepth)
-	bestDepth = [18.88, 27.63, 18.38, 26.88]
-	#now we can run the full calcsfh script for each timebin
+	bestDepth = [21.01, 28.31, 20.52, 27.87]
+        #now we can run the full calcsfh script for each timebin
+	comm = "mkdir "+basedir+"sfh_fullres/"
+	sp.call(comm.split())
 	fullCalc(scriptr, basedir+"sfh_fullres/", bestDepth, "sfh_fullres")
 	#fullCalc(scriptr, basedir+"sfh_no_res/", bestDepth, "sfh_no_res")
 	#fullCalc(scriptr, basedir+"sfh_starburst_v1res/", bestDepth, "sfh_starburst_v1res")
