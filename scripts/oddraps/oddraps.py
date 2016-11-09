@@ -437,7 +437,7 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt):
 	sold = sold + goodfilt	#list has starting lum and starting filter values
 	
 	#here is where we actually find the best filter values
-	delta = .5		#choose how much values differ between runs
+	delta = .05		#choose how much values differ between runs
 	runnum = 0		#keeps track of number of completed cycles
 	while True:		#will stop loop 'manually' inside once end of cycle yield no positive change in lum
 		if runnum > 100:
@@ -464,7 +464,7 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt):
 		pool.close()
 		pool.join()	
 		for i in range(0, flail):
-			strflail = '%03d' % (flail,)
+			strflail = '%03d' % (i,)
 			lumlist.append(calclum(pwd+'outTEST'+strflail, galdist))	#record total luminosity in list entry
 		maxloc, maxval = max(enumerate(lumlist), key=operator.itemgetter(1))		#find highest lum value and location after all trails complete
 		runstr = '%03d' % (runnum,)			#convert cycle number to str for out files		
@@ -472,7 +472,7 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt):
 			sold[0] = maxval			#new stored lum value
 			sold[1:] = permlist[maxloc]		#new stored filter values
 			valstr = '%03d' % (maxloc,)		#store best run number as string for out files
-			copyfile(pwd+'fakeparsTEST'+valstr+'.txt', pwd+'fakepars'+runstr+'.txt')	#copy temp pars of best run to new file
+			copyfile(pwd+'fakeparsTEST'+valstr, pwd+'fakepars'+runstr)	#copy temp pars of best run to new file
 			copyfile(pwd+'outTEST'+valstr, pwd+'out'+runstr)				#copy temp out of best run to new file
 			runnum = runnum + 1
 		else:
@@ -482,19 +482,19 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt):
 	#produce CMD of best run
 	g = open(pwd+"results","a")
 	BestPlot(pwd, "out"+'%03d' % (runnum - 1,))
-	g.write("CMD of best run created at out"+'%03d' % (runnum - 1,))
+	g.write("CMD of best run created at out"+'%03d' % (runnum - 1,)+"\n")
 	#calculate mass/light ratio for galaxy
 	#find total luminosity of best run
 	totlum = calclum(pwd+"out"+'%03d' % (runnum - 1,), galdist)
-	g.write("Total Luminosity is "+str(totlum))
-	g.write("Gal Mass is "+str(galmass))
+	g.write("Total Luminosity is "+str(totlum)+"\n")
+	g.write("Gal Mass is "+str(galmass)+"\n")
 	ratio = galmass/totlum	#In sol mass/sol lum
-	g.write("Mass/Light ratio is "+str(ratio))
+	g.write("Mass/Light ratio is "+str(ratio)+"\n")
 	#now compare magnitude from Spitzer with mag from fake luminosity
 	SM, Sm = SpitMag(galvals)
-	g.write("Spitzer absol and appar mag:",SM,Sm)
+	g.write("Spitzer absol and appar mag: "+str(SM)+" "+str(Sm)+"\n")
 	LM, Lm = LumMag(pwd+"out"+'%03d' % (runnum - 1,), galvals)
-	g.write("Fake absol and appar mag:",LM,Lm)
+	g.write("Fake absol and appar mag: "+str(LM)+" "+str(Lm))
 	
 def SpitMag(galinfo):
 	#finds magnitudes of gal from measured IRAC 3.6 flux
