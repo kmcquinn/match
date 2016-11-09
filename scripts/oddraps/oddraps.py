@@ -376,7 +376,7 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt):
 	galflux, galdist = galvals
 	
 	
-	sp.call(["mkdir",basis+"fakes"])
+	sp.call(["mkdir",galdir+"fakes"])
 	makePars(galdir, pwd+"CparsBasis", goodfilt, "sfh_fullres")
 	
 	#use values to create start of fake pars file (up until timebins)
