@@ -1,3 +1,6 @@
+# (50B, 50R) = 50% completeness limit
+# (OB, OR) = Filter depths found in pars file
+# (NB, NR) = Filter depths we found
 Name	50B	50R	OB	OR	NB	NR
 4163	28.14	27.24	27.98	27.19	27.98	27.19
 8651	28.04	27.18	27.96	27.12	27.96	27.12
