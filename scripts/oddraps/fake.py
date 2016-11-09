@@ -437,7 +437,7 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt):
 	sold = sold + goodfilt	#list has starting lum and starting filter values
 	
 	#here is where we actually find the best filter values
-	delta = .5		#choose how much values differ between runs
+	delta = .05		#choose how much values differ between runs
 	runnum = 0		#keeps track of number of completed cycles
 	while True:		#will stop loop 'manually' inside once end of cycle yield no positive change in lum
 		if runnum > 100:
@@ -462,8 +462,7 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt):
 		pool = mp.Pool(None)
 		pool.map_async(Fakework, commlist)
 		pool.close()
-		pool.join()
-                print(flail)
+		pool.join()	
 		for i in range(0, flail):
 			strflail = '%03d' % (i,)
 			lumlist.append(calclum(pwd+'outTEST'+strflail, galdist))	#record total luminosity in list entry
@@ -483,19 +482,19 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt):
 	#produce CMD of best run
 	g = open(pwd+"results","a")
 	BestPlot(pwd, "out"+'%03d' % (runnum - 1,))
-	g.write("CMD of best run created at out"+'%03d' % (runnum - 1,))
+	g.write("CMD of best run created at out"+'%03d' % (runnum - 1,)+"\n")
 	#calculate mass/light ratio for galaxy
 	#find total luminosity of best run
 	totlum = calclum(pwd+"out"+'%03d' % (runnum - 1,), galdist)
-	g.write("Total Luminosity is "+str(totlum))
-	g.write("Gal Mass is "+str(galmass))
+	g.write("Total Luminosity is "+str(totlum)+"\n")
+	g.write("Gal Mass is "+str(galmass)+"\n")
 	ratio = galmass/totlum	#In sol mass/sol lum
-	g.write("Mass/Light ratio is "+str(ratio))
+	g.write("Mass/Light ratio is "+str(ratio)+"\n")
 	#now compare magnitude from Spitzer with mag from fake luminosity
 	SM, Sm = SpitMag(galvals)
-	g.write("Spitzer absol and appar mag:",SM,Sm)
+	g.write("Spitzer absol and appar mag: "+str(SM)+" "+str(Sm)+"\n")
 	LM, Lm = LumMag(pwd+"out"+'%03d' % (runnum - 1,), galvals)
-	g.write("Fake absol and appar mag:",LM,Lm)
+	g.write("Fake absol and appar mag: "+str(LM)+" "+str(Lm))
 	
 def SpitMag(galinfo):
 	#finds magnitudes of gal from measured IRAC 3.6 flux
