@@ -26,7 +26,7 @@ Upon completion:
 	/GALfolder/metals_proc/scriptdir/calctests has all cmds, ps files
 	FiltResults file gives output name, filter depths, fit value
 	/sfh_*timebin*/ folders have all fullCalc results.
-		may need to run command to generate out.hybrid.ps
+		may need to run command to generate out.ps
 
 oddraps = on dwarf disks, running a python script
 '''
@@ -356,6 +356,10 @@ def fullCalc(bpath, fullpath, goodDepths, tbins):
 	#so we have created the pars file used in the main calcsfh runs, and completed a full calcsfh analysis of this galaxy
 	#a plot has been created showing the fit and uncertainties
 
+
+def Fakework(comm):
+	sp.call(comm.split())
+	return 0
 def fullFake(galdir, basis, pwd, galvals, goodfilt):
 	#finds filter values that max. total lum. in output file. Uses this to find M/L ratio of galaxy
 	
@@ -369,6 +373,9 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt):
 	#pars file split into three parts: header, filters, and footer
 	#will first build these files to easily swap in new filter values as needed
 	#first generate calcsfh pars file needed to create fake pars file
+	galflux, galdist = galvals
+	
+	
 	sp.call(["mkdir",basis+"fakes"])
 	makePars(galdir, pwd+"CparsBasis", goodfilt, "sfh_fullres")
 	
@@ -393,7 +400,7 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt):
 	f.close()
 	
 	#open out.final from sfh_fullres, needed for sfr z values
-	h = open(galdir+"sfh_fullres/out.hybrid.final","r")
+	h = open(galdir+"sfh_fullres/out.final","r")
 	galmass = float(h.readline().split()[1])	#store gal mass for later, also sets file up to start reading timebins
 	j = open("sfh_fullres", 'r') 	#open timebin file for # of timebins
 	tbins = int(j.readline().split()[0])	#record number of timebins
@@ -426,7 +433,7 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt):
 	comm = 'fake '+pwd+'parstest '+pwd+'outtest -full -KROUPA -PARSEC'
 	sp.call(comm.split())
 	sold = []
-	sold.append(calclum(pwd+"outtest"))
+	sold.append(calclum(pwd+"outtest", galdist))
 	sold = sold + goodfilt	#list has starting lum and starting filter values
 	
 	#here is where we actually find the best filter values
@@ -435,28 +442,30 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt):
 	while True:		#will stop loop 'manually' inside once end of cycle yield no positive change in lum
 		if runnum > 100:
 			print('you need a vacation')
+			print("Best run found at index 100")
 			break
 		flail = 0	#keeps track of permutation number
 		lumlist = []	#records lum in given run
-		permlist = []	#records filter values in given run	
+		permlist = []	#records filter values in given run
+		commlist = []	
 		for w in range(-1,2):	#go through each perm of var inc/dec
 			for x in range(-1,2):
-				for y in range(-1,2):
-					for z in range(-1,2):
-						strflail = '%03d' % (flail,)		#convert run number to string for out files
-						totest = sold[1:]			#grab values stored at end of previous cycle
-						totest[0] = totest[0] + w * delta	#inc, dec, or stay constant depending on index values
-						totest[1] = totest[1] + x * delta
-						totest[2] = totest[2] + y * delta
-						totest[3] = totest[3] + z * delta
-						permlist.append(totest)
-						makeFakePars(pwd, 'TEST'+strflail, totest)	#make pars file with 'test' to indicate temp file
-						comm = 'fake '+pwd+'fakepars'+'TEST'+strflail+'.txt'+' '+pwd+'out'+'TEST'+strflail+' -full -KROUPA -PARSEC'
-						sp.call(comm.split())
-						flail = flail + 1
+				strflail = '%03d' % (flail,)		#convert run number to string for out files
+				totest = sold[1:]			#grab values stored at end of previous cycle
+				totest[1] = totest[1] + w * delta	#inc, dec, or stay constant depending on index values
+				totest[3] = totest[3] + x * delta
+				permlist.append(totest)
+				makeFakePars(pwd, 'TEST'+strflail, totest)	#make pars file with 'test' to indicate temp file
+				comm = 'fake '+pwd+'fakepars'+'TEST'+strflail+' '+pwd+'out'+'TEST'+strflail+' -full -KROUPA -PARSEC'
+				commlist.append(comm)
+				flail = flail + 1
+		pool = mp.Pool(None)
+		pool.map_async(Fakework, commlist)
+		pool.close()
+		pool.join()	
 		for i in range(0, flail):
 			strflail = '%03d' % (flail,)
-			lumlist.append(calclum(pwd+'outTEST'+strflail, galvals[1]))	#record total luminosity in list entry
+			lumlist.append(calclum(pwd+'outTEST'+strflail, galdist))	#record total luminosity in list entry
 		maxloc, maxval = max(enumerate(lumlist), key=operator.itemgetter(1))		#find highest lum value and location after all trails complete
 		runstr = '%03d' % (runnum,)			#convert cycle number to str for out files		
 		if maxval > sold[0]:				#if highest found value, exceeds prev number, this is sucessful run
@@ -471,17 +480,22 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt):
 			break
 	
 	#produce CMD of best run
+	g = open(pwd+"results","a")
 	BestPlot(pwd, "out"+'%03d' % (runnum - 1,))
-	
+	g.write("CMD of best run created at out"+'%03d' % (runnum - 1,))
 	#calculate mass/light ratio for galaxy
 	#find total luminosity of best run
-	totlum = calclum(pwd+"out"+'%03d' % (runnum - 1,), galvals[1])
+	totlum = calclum(pwd+"out"+'%03d' % (runnum - 1,), galdist)
+	g.write("Total Luminosity is "+str(totlum))
+	g.write("Gal Mass is "+str(galmass))
 	ratio = galmass/totlum	#In sol mass/sol lum
-	
+	g.write("Mass/Light ratio is "+str(ratio))
 	#now compare magnitude from Spitzer with mag from fake luminosity
 	SM, Sm = SpitMag(galvals)
+	g.write("Spitzer absol and appar mag:",SM,Sm)
 	LM, Lm = LumMag(pwd+"out"+'%03d' % (runnum - 1,), galvals)
-
+	g.write("Fake absol and appar mag:",LM,Lm)
+	
 def SpitMag(galinfo):
 	#finds magnitudes of gal from measured IRAC 3.6 flux
 	fzero = 280.9	#Flux zero point in IRAC filter in Janskys
