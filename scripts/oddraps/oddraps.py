@@ -282,6 +282,8 @@ def fullCalc(bpath, fullpath, goodDepths, tbins):
 	bpath -> /scriptdir/
 	fullpath -> /sfh_fullres/
 	'''
+	comm = "mkdir "+fullpath
+	sp.call(comm.split())
 	#runs the full calcsfh workflow, incudes hybridMC, .ps plot of results
 	photLoc = bpath+"phot"
 	fakeLoc = bpath+"fake"
@@ -592,6 +594,7 @@ def main():
 
 	GalName = sys.argv[1]
 	#find all cataloged infomation based on galaxy
+	runFit = 1
 	with open('GalCatalog','r') as fobj:
 			for line in fobj:
 				info = line.split()
@@ -599,6 +602,10 @@ def main():
 					GalDir = info[1]
 					GalFlux = float(info[2])
 					GalDist = float(info[3])
+					if len(info) > 4:
+						bestDepth = info[4:]
+						bestDepth = [float(i) for i in GalFilt]
+						runFit = 0
 					break
 	basedir = "/work/04316/kmcquinn/wrangler/metals/galaxies/"+GalDir+"/"+GalName+"/metals_proc/"
 	scriptr = basedir + "scriptdir/"
@@ -608,11 +615,10 @@ def main():
 	#print(Fstart)
 	#now run calcsfh with different filter values to find best depths
 	#from here on out, we are running match commands and will need to use sbatch to run efficently
-	bestDepth = calcFit(basedir, scriptr, Fstart)
+	if runFit == 1:
+		bestDepth = calcFit(basedir, scriptr, Fstart)
 	#print(bestDepth)
 	#now we can run the full calcsfh script for each timebin
-	comm = "mkdir "+basedir+"sfh_fullres/"
-	sp.call(comm.split())
 	fullCalc(scriptr, basedir+"sfh_fullres/", bestDepth, "sfh_fullres")
 	#fullCalc(scriptr, basedir+"sfh_no_res/", bestDepth, "sfh_no_res")
 	#fullCalc(scriptr, basedir+"sfh_starburst_v1res/", bestDepth, "sfh_starburst_v1res")
