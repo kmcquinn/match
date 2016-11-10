@@ -604,7 +604,7 @@ def main():
 					GalDist = float(info[3])
 					if len(info) > 4:
 						bestDepth = info[4:]
-						bestDepth = [float(i) for i in GalFilt]
+						bestDepth = [float(i) for i in bestDepth]
 						runFit = 0
 					break
 	basedir = "/work/04316/kmcquinn/wrangler/metals/galaxies/"+GalDir+"/"+GalName+"/metals_proc/"
