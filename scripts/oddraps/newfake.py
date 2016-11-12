@@ -604,7 +604,7 @@ def main():
 		-fullCalc: MC runs for given filter depths and timebin. Also combines and produces all needed .ps outputs
 		-fullFake: Finds IRAC filter depths that produce highest "fake" luminosity for galaxy. Compares with known magnitude of gal, produces M/L ratio
 	    You will need setFolder and editFiles the first time on a given galaxy in order to run any other functions
-	    Information from each function is not ingelligently stored (ie saved in reference file to save time on repeat runs). I'll add this once everything works.
+	Information from each function is not ingelligently stored (ie saved in reference file to save time on repeat runs). I'll add this once everything works.
 	'''
 
 	GalName = sys.argv[1]
@@ -634,12 +634,12 @@ def main():
 		bestDepth = calcFit(basedir, scriptr, Fstart)
 	#print(bestDepth)
 	#now we can run the full calcsfh script for each timebin
-	fullCalc(scriptr, basedir+"sfh_fullres/", bestDepth, "sfh_fullres")
+	#fullCalc(scriptr, basedir+"sfh_fullres/", bestDepth, "sfh_fullres")
 	#fullCalc(scriptr, basedir+"sfh_no_res/", bestDepth, "sfh_no_res")
 	#fullCalc(scriptr, basedir+"sfh_starburst_v1res/", bestDepth, "sfh_starburst_v1res")
 	#fullCalc(scriptr, basedir+"sfh_starburst_v2res/", bestDepth, "sfh_starburst_v2res")
 	#all calcsfh runs have completed. Now to run fake to compute mass/light ratio
-	#fullFake(basedir, scriptr, basedir+"fakes/", [GalFlux,GalDist], bestDepth)
+	fullFake(basedir, scriptr, basedir+"fakes/", [GalFlux,GalDist], bestDepth)
 	
 if __name__ == "__main__":
     main()
