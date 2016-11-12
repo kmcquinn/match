@@ -439,8 +439,10 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt):
 	sold = sold + goodfilt	#list has starting lum and starting filter values
 	
 	#here is where we actually find the best filter values
-	delta = .05		#choose how much values differ between runs
+	delta = .01		#choose how much values differ between runs
 	runnum = 0		#keeps track of number of completed cycles
+	xdepth = []
+	ydepth = []
 	while True:		#will stop loop 'manually' inside once end of cycle yield no positive change in lum
 		if runnum > 100:
 			print('you need a vacation')
@@ -450,8 +452,8 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt):
 		lumlist = []	#records lum in given run
 		permlist = []	#records filter values in given run
 		commlist = []	
-		for w in range(-1,2):	#go through each perm of var inc/dec
-			for x in range(-1,2):
+		for w in range(-20,20):	#go through each perm of var inc/dec
+			for x in range(-20,20):
 				strflail = '%03d' % (flail,)		#convert run number to string for out files
 				totest = sold[1:]			#grab values stored at end of previous cycle
 				totest[1] = totest[1] + w * delta	#inc, dec, or stay constant depending on index values
@@ -471,6 +473,8 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt):
 		maxloc, maxval = max(enumerate(lumlist), key=operator.itemgetter(1))		#find highest lum value and location after all trails complete
 		runstr = '%03d' % (runnum,)			#convert cycle number to str for out files		
 		if maxval > sold[0]:				#if highest found value, exceeds prev number, this is sucessful run
+			ydepth.append(maxval)
+			xdepth.append(permlist[maxloc][1])
 			sold[0] = maxval			#new stored lum value
 			sold[1:] = permlist[maxloc]		#new stored filter values
 			valstr = '%03d' % (maxloc,)		#store best run number as string for out files
@@ -483,8 +487,10 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt):
 	
 	#produce CMD of best run
 	g = open(pwd+"results","a")
+	PlotCurve(pwd,xdepth,ydepth)
 	BestPlot(pwd, "out"+'%03d' % (runnum - 1,))
 	g.write("CMD of best run created at out"+'%03d' % (runnum - 1,)+"\n")
+	g.write("curve of growth plotted 
 	#calculate mass/light ratio for galaxy
 	#find total luminosity of best run
 	totlum = calclum(pwd+"out"+'%03d' % (runnum - 1,), galdist)
@@ -541,6 +547,14 @@ def BestPlot(pwd, outname):
 	plt.savefig(pwd+'CMD'+outname+'.png')	
 	plt.close()
 	
+def PlotCurve(pwd, xdepth, ydepth):
+	plt.scatter(xdepth, ydepth, s=0.2)
+	plt.xlabel('Blue Filter Depth')
+	plt.ylabel('Total Luminosity')
+	plt.title('Curve of growth w/ varying depth')
+	plt.savefig(pwd+'CMDcurve.png')	
+	plt.close()
+	
 def makeFakePars(pwd, runber, totest):
 	#creates pars file for fake program to use
 	g = open(pwd+"fakepars"+runber, 'w')	#new pars file
@@ -564,7 +578,8 @@ def calclum(path_to_fakeout, galdist):
 	with open(path_to_fakeout) as fobj:
 		for line in fobj:
 			row = line.split()
-			mbol.append(float(row[0]))	#only concerned with IRAC3.6 mag
+			if row[0] < 98.0 and row[1] < 98.0:
+				mbol.append(float(row[0]))	#only concerned with IRAC3.6 mag
 	#convert mbol list to luminosity values
 	for i in range(0, len(mbol) - 1):
 		mbol[i] = 10 ** ((1/2.5)*(-mbol[i]+logdist+3.24))	#units of solar luminosity
