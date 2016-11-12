@@ -452,8 +452,8 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt):
 		lumlist = []	#records lum in given run
 		permlist = []	#records filter values in given run
 		commlist = []	
-		for w in range(-20,20):	#go through each perm of var inc/dec
-			for x in range(-20,20):
+		for w in range(-10,10):	#go through each perm of var inc/dec
+			for x in range(-10,10):
 				strflail = '%03d' % (flail,)		#convert run number to string for out files
 				totest = sold[1:]			#grab values stored at end of previous cycle
 				totest[1] = totest[1] + w * delta	#inc, dec, or stay constant depending on index values
