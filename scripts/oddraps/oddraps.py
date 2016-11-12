@@ -469,12 +469,14 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt):
 		pool.join()	
 		for i in range(0, flail):
 			strflail = '%03d' % (i,)
-			lumlist.append(calclum(pwd+'outTEST'+strflail, galdist))	#record total luminosity in list entry
+			lum = calclum(pwd+'outTEST'+strflail, galdist)
+			rfilt = permlist[i][1]
+			xdepth.append(rfilt)
+			ydepth.append(lum)
+			lumlist.append(lum)	#record total luminosity in list entry
 		maxloc, maxval = max(enumerate(lumlist), key=operator.itemgetter(1))		#find highest lum value and location after all trails complete
 		runstr = '%03d' % (runnum,)			#convert cycle number to str for out files		
 		if maxval > sold[0]:				#if highest found value, exceeds prev number, this is sucessful run
-			ydepth.append(maxval)
-			xdepth.append(permlist[maxloc][1])
 			sold[0] = maxval			#new stored lum value
 			sold[1:] = permlist[maxloc]		#new stored filter values
 			valstr = '%03d' % (maxloc,)		#store best run number as string for out files
