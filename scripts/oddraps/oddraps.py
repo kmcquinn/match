@@ -490,7 +490,7 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt):
 	PlotCurve(pwd,xdepth,ydepth)
 	BestPlot(pwd, "out"+'%03d' % (runnum - 1,))
 	g.write("CMD of best run created at out"+'%03d' % (runnum - 1,)+"\n")
-	g.write("curve of growth plotted 
+	g.write("curve of growth plotted at CMDcurve.png")
 	#calculate mass/light ratio for galaxy
 	#find total luminosity of best run
 	totlum = calclum(pwd+"out"+'%03d' % (runnum - 1,), galdist)
