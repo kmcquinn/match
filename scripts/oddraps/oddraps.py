@@ -664,7 +664,7 @@ def main():
 	#fullCalc(scriptr, basedir+"sfh_starburst_v1res/", bestDepth, "sfh_starburst_v1res")
 	#fullCalc(scriptr, basedir+"sfh_starburst_v2res/", bestDepth, "sfh_starburst_v2res")
 	#all calcsfh runs have completed. Now to run fake to compute mass/light ratio
-	fullFake(basedir, scriptr, basedir+"fakes/", [GalFlux,GalDist], bestDepth, Zinc)
+	#fullFake(basedir, scriptr, basedir+"fakes/", [GalFlux,GalDist], bestDepth, Zinc)
 	
 if __name__ == "__main__":
     main()
