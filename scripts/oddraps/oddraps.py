@@ -121,7 +121,7 @@ def editFiles(sir):
 	g.close()
 	return [float(i) for i in startblue] + [float(i) for i in startred]	#returns startblue and startred as one list of float entries
 
-def makePars(basepath, newpath, depths, times):
+def makePars(basepath, newpath, depths, times, zinc):
 	#produced calcsfh pars file based on given parameters
 	#basepath: basedir
 	#newpath: location, name of new pars file
@@ -131,7 +131,13 @@ def makePars(basepath, newpath, depths, times):
 	#open base pars file and write first 5 lines to new pars file
 	g = open(basepath+'scriptdir/pars', 'r')
 	p = open(newpath, 'w')
-	for i in range(0,5):
+	p.write(g.readline())
+	line2 = g.readline()[:-1]
+	if zinc == True:
+		line2 = line2 + " -2.3 -0.9 -1.6 0.1"
+	line2 = line2+"\n"
+	p.write(line2)
+	for i in range(0,3):
 		p.write(g.readline())
 	
 	#now we are at the filter lines
@@ -187,7 +193,7 @@ def doWork(putin):
 			time.sleep(60)
 			continue
 
-def calcFit(bir, scr, filtStart):
+def calcFit(bir, scr, filtStart, zinc):
 	'''
 	this is a modified version of the calcsfh depth optimatization on oddraps
 	it will take the starting filter values in the given par file and try every variation of the weak V and I filter limits witin a given range and step size
@@ -241,8 +247,10 @@ def calcFit(bir, scr, filtStart):
 			totest[1] = totest[1] + i * delta
 			totest[3] = totest[3] + j * delta
 			commdict[flail].append(totest)
-			makePars(bir, parspath, totest, "sfh_fullres")	#make pars file with 'test' to indicate temp file
+			makePars(bir, parspath, totest, "sfh_fullres", zinc)	#make pars file with 'test' to indicate temp file
 			comm = "calcsfh "+parspath+" "+scrPhot+" "+scrFake+" "+outpath+" -Kroupa -PARSEC"	#command to send out
+			if zinc == True:
+				comm = comm + " -zinc"
 			commdict[flail].append(comm)
 			runname.append(flail)	#add runname to list
 			flail = flail + 1
@@ -277,7 +285,7 @@ def Calcwork(arr):
 	sp.call(comm.split(),stdout=f)
 	f.close()
 	return 0
-def fullCalc(bpath, fullpath, goodDepths, tbins):
+def fullCalc(bpath, fullpath, goodDepths, tbins, zinc):
 	'''
 	bpath -> /scriptdir/
 	fullpath -> /sfh_fullres/
@@ -288,7 +296,7 @@ def fullCalc(bpath, fullpath, goodDepths, tbins):
 	photLoc = bpath+"phot"
 	fakeLoc = bpath+"fake"
 	#create needed pars file, run full calcsfh script
-	makePars(bpath+"../", fullpath+"pars", goodDepths, tbins)
+	makePars(bpath+"../", fullpath+"pars", goodDepths, tbins, zinc)
 	#need to figure out values for logterrsig, mbolerrsig
 	g = open(fullpath+"pars", 'r')
 	Mt = float(g.readline().split()[0])
@@ -312,17 +320,24 @@ def fullCalc(bpath, fullpath, goodDepths, tbins):
 	lgsig, mbol = vals[minloc][0], vals[minloc][1]
 	#run calcsfh once for use with hybridMC
 	comm = "calcsfh "+fullpath+"pars "+photLoc+" "+fakeLoc+" "+fullpath+"out -Kroupa -PARSEC -mcdata"
+	if zinc == True:
+		comm = comm +" -zinc"
 	f = open(fullpath+"console.txt", "wb")	
 	sp.call(comm.split(),stdout=f)
 	f.close()
 	#run hybridMC 1000 times
 	comm = "hybridMC "+fullpath+"out.dat "+fullpath+"out.mcmc -tint=2.0 -nmc=10000 -dt=0.015"
+	if zinc == True:
+		comm = comm + " -zinc"
 	f = open(fullpath+"hybrid_console.txt", "wb")	
 	sp.call(comm.split(),stdout=f)
 	f.close()
 	
 	part1 = "calcsfh "+fullpath+"pars "+photLoc+" "+fakeLoc+" "+fullpath+"out_"
-	part2 = " -Kroupa -PARSEC -mcdata -mcseed="
+	if zinc == True:
+		part2 = " -Kroupa -PARSEC -zinc -mcdata -mcseed="
+	else:
+		part2 = " -Kroupa -PARSEC -mcdata -mcseed="
 	part3 = " -logterrsig="
 	part4 = " -mbolerrsig="
 	
@@ -379,7 +394,7 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt):
 	
 	
 	sp.call(["mkdir",galdir+"fakes"])
-	makePars(galdir, pwd+"CparsBasis", goodfilt, "sfh_fullres")
+	makePars(galdir, pwd+"CparsBasis", goodfilt, "sfh_fullres", zinc)
 	
 	#use values to create start of fake pars file (up until timebins)
 	p = open(pwd+"CparsBasis", 'r')	#open calcsfh pars file
@@ -550,6 +565,9 @@ def BestPlot(pwd, outname):
 	plt.close()
 	
 def PlotCurve(pwd, xdepth, ydepth):
+	g = open("curveinfo","w")
+	for i in range(0,len(xdepth)):
+		g.write(str(xdepth[i])+"\t"+str(ydepth[i]))
 	plt.scatter(xdepth, ydepth, s=0.2)
 	plt.xlabel('Blue Filter Depth')
 	plt.ylabel('Total Luminosity')
@@ -610,6 +628,14 @@ def main():
 	'''
 
 	GalName = sys.argv[1]
+	try:
+		Zinc = sys.argv[2][6:]	#form: -zinc=True/False
+	except:
+		Zinc = "False"
+	if Zinc == "True":
+		Zinc = True
+	else:
+		Zinc = False
 	#find all cataloged infomation based on galaxy
 	runFit = 1
 	with open('GalCatalog','r') as fobj:
@@ -633,10 +659,10 @@ def main():
 	#now run calcsfh with different filter values to find best depths
 	#from here on out, we are running match commands and will need to use sbatch to run efficently
 	if runFit == 1:
-		bestDepth = calcFit(basedir, scriptr, Fstart)
+		bestDepth = calcFit(basedir, scriptr, Fstart, Zinc)
 	#print(bestDepth)
 	#now we can run the full calcsfh script for each timebin
-	fullCalc(scriptr, basedir+"sfh_fullres/", bestDepth, "sfh_fullres")
+	fullCalc(scriptr, basedir+"sfh_fullres/", bestDepth, "sfh_fullres", Zinc)
 	#fullCalc(scriptr, basedir+"sfh_no_res/", bestDepth, "sfh_no_res")
 	#fullCalc(scriptr, basedir+"sfh_starburst_v1res/", bestDepth, "sfh_starburst_v1res")
 	#fullCalc(scriptr, basedir+"sfh_starburst_v2res/", bestDepth, "sfh_starburst_v2res")
