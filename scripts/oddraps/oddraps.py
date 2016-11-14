@@ -327,8 +327,6 @@ def fullCalc(bpath, fullpath, goodDepths, tbins, zinc):
 	f.close()
 	#run hybridMC 1000 times
 	comm = "hybridMC "+fullpath+"out.dat "+fullpath+"out.mcmc -tint=2.0 -nmc=10000 -dt=0.015"
-	if zinc == True:
-		comm = comm + " -zinc"
 	f = open(fullpath+"hybrid_console.txt", "wb")	
 	sp.call(comm.split(),stdout=f)
 	f.close()
@@ -454,7 +452,7 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt, zinc):
 	sold = sold + goodfilt	#list has starting lum and starting filter values
 	
 	#here is where we actually find the best filter values
-	delta = .01		#choose how much values differ between runs
+	delta = .25		#choose how much values differ between runs
 	runnum = 0		#keeps track of number of completed cycles
 	xdepth = []
 	ydepth = []
@@ -467,17 +465,18 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt, zinc):
 		lumlist = []	#records lum in given run
 		permlist = []	#records filter values in given run
 		commlist = []	
-		for w in range(-10,10):	#go through each perm of var inc/dec
-			for x in range(-10,10):
-				strflail = '%03d' % (flail,)		#convert run number to string for out files
-				totest = sold[1:]			#grab values stored at end of previous cycle
-				totest[1] = totest[1] + w * delta	#inc, dec, or stay constant depending on index values
-				totest[3] = totest[3] + x * delta
-				permlist.append(totest)
-				makeFakePars(pwd, 'TEST'+strflail, totest)	#make pars file with 'test' to indicate temp file
-				comm = 'fake '+pwd+'fakepars'+'TEST'+strflail+' '+pwd+'out'+'TEST'+strflail+' -full -KROUPA -PARSEC'
-				commlist.append(comm)
-				flail = flail + 1
+		for w in range(-12,24):	#go through each perm of var inc/dec
+			#for x in range(-12,15):
+			strflail = '%03d' % (flail,)		#convert run number to string for out files
+			totest = sold[1:]			#grab values stored at end of previous cycle
+			totest[1] = totest[1] + w * delta	#inc, dec, or stay constant depending on index values
+			#totest[3] = totest[3] + x * delta
+			totest[3] = 34.0
+			permlist.append(totest)
+			makeFakePars(pwd, 'TEST'+strflail, totest)	#make pars file with 'test' to indicate temp file
+			comm = 'fake '+pwd+'fakepars'+'TEST'+strflail+' '+pwd+'out'+'TEST'+strflail+' -full -KROUPA -PARSEC'
+			commlist.append(comm)
+			flail = flail + 1
 		pool = mp.Pool(None)
 		pool.map_async(Fakework, commlist)
 		pool.close()
