@@ -15,7 +15,7 @@ import os
 HOW TO RUN ODDRAPS:
 1.) Place lastest version in same folder as GalCatalog, sfh_full res file, teffdata file
 2.) Edit sample batch script
-	command: "python oddraps.py NAMEofGALAXYfolder"
+	command: "python oddraps.py NAMEofGALAXYfolder -zinc=True/False"
 	use your email, set time at ~48h
 	may want to split calcFit and FullCalc into two separate jobs
 		this is easily done by commenting out the functions you dont want for each script submission
@@ -377,7 +377,7 @@ def fullCalc(bpath, fullpath, goodDepths, tbins, zinc):
 def Fakework(comm):
 	sp.call(comm.split())
 	return 0
-def fullFake(galdir, basis, pwd, galvals, goodfilt):
+def fullFake(galdir, basis, pwd, galvals, goodfilt, zinc):
 	#finds filter values that max. total lum. in output file. Uses this to find M/L ratio of galaxy
 	
 	#dumb paramater naming here
@@ -667,7 +667,7 @@ def main():
 	#fullCalc(scriptr, basedir+"sfh_starburst_v1res/", bestDepth, "sfh_starburst_v1res")
 	#fullCalc(scriptr, basedir+"sfh_starburst_v2res/", bestDepth, "sfh_starburst_v2res")
 	#all calcsfh runs have completed. Now to run fake to compute mass/light ratio
-	#fullFake(basedir, scriptr, basedir+"fakes/", [GalFlux,GalDist], bestDepth)
+	fullFake(basedir, scriptr, basedir+"fakes/", [GalFlux,GalDist], bestDepth, Zinc)
 	
 if __name__ == "__main__":
     main()
