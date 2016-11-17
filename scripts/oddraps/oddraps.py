@@ -30,7 +30,7 @@ Upon completion:
 
 oddraps = on dwarf disks, running a python script
 '''
-def setFolder(bir):
+def setFolder(bir, phot, fake, pars):
 	'''
 	hey, this guy is taking the first file it sees that fits those wildcards
 	that means if there is more than one match, any of those files is fair game for it to pull
@@ -40,23 +40,28 @@ def setFolder(bir):
 	#first setup folder in gal dir to build files
 	sp.call(["mkdir",bir+"scriptdir/"])
 	#find pars file in input_data folder
-	fold = bir+"../conf_new_dol/"
-	inList = sp.check_output(["ls",fold]).splitlines()
-	cull = fnmatch.filter(inList,"*matchpars231")
-	copyfile(fold+cull[0], bir+"scriptdir/basepars")
-        #find phot file in input_data folder
-	#NOTE: Here I will also store the written filter values for editFiles to use
+	if pars == None:
+		fold = bir+"../conf_new_dol/"
+		inList = sp.check_output(["ls",fold]).splitlines()
+		cull = fnmatch.filter(inList,"*matchpars231")
+		copyfile(fold+cull[0], bir+"scriptdir/basepars")
+	else:
+		copyfile(pars, bir+"scriptdir/basepars")
+	
 	fold = bir+"../proc_new_dol/"
 	inList = sp.check_output(["ls",fold]).splitlines()
-	exten = "*.gst.match"
-	cull = fnmatch.filter(inList,exten)
-	#store filter values
-	#copy phot file to script dir
-	copyfile(fold+cull[0], bir+"scriptdir/phot")
-	#find fake file in input_data folder
-	cull = fnmatch.filter(inList,"*gst.matchfake")
-	#copy fake file to script dir
-	copyfile(fold+cull[0], bir+"scriptdir/fake")
+	
+	if phot == None:
+		exten = "*.gst.match"
+		cull = fnmatch.filter(inList,exten)
+		copyfile(fold+cull[0], bir+"scriptdir/phot")
+	else:
+		copyfile(phot, bir+"scriptdir/phot")
+	if fake == None:
+		cull = fnmatch.filter(inList,"*gst.matchfake")
+		copyfile(fold+cull[0], bir+"scriptdir/fake")
+	else:
+		copyfile(fake, bir+"scriptdir/fake")
 	#ok so all the files we need are in our new directory, and we grabbed the filter names from the filenames to compare with the given pars file. 
 
 def editFiles(sir):
@@ -622,7 +627,7 @@ def main():
 	    You will need setFolder and editFiles the first time on a given galaxy in order to run any other functions
 	    Information from each function is not ingelligently stored (ie saved in reference file to save time on repeat runs). I'll add this once everything works.
 	'''
-
+	#python oddraps.py GalFolder -zinc=True/False -time=full/no/v1/v2 -phot=PhotPath -fake=FakePath -pars=ParsPath
 	GalName = sys.argv[1]
 	try:
 		Zinc = sys.argv[2][6:]	#form: -zinc=True/False
@@ -644,6 +649,18 @@ def main():
 			tibin = "sfh_starburst_v2res"
 	except:
 		tibin = "sfh_fullres"
+	try:
+		phot = sys.argv[4][6:]
+	except:
+		phot = None
+	try:
+		fake = sys.argv[5][6:]
+	except:
+		fake = None
+	try:
+		pars = sys.argv[6][6:]
+	except:
+		pars = None
 		
 	#find all cataloged infomation based on galaxy
 	runFit = 1
@@ -661,7 +678,7 @@ def main():
 					break
 	basedir = "/work/04316/kmcquinn/wrangler/metals/galaxies/"+GalDir+"/"+GalName+"/metals_proc/"
 	scriptr = basedir + "scriptdir/"
-	setFolder(basedir)	#create work folder inside gal dir, move given files into it, send back filters used in file names
+	setFolder(basedir, phot, fake, pars)	#create work folder inside gal dir, move given files into it, send back filters used in file names
 	#now we need to make any needed changes to these given files before using them in calcsfh
 	Fstart = editFiles(scriptr)
 	#print(Fstart)
