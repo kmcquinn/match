@@ -628,40 +628,36 @@ def main():
 	    Information from each function is not ingelligently stored (ie saved in reference file to save time on repeat runs). I'll add this once everything works.
 	'''
 	#python oddraps.py GalFolder -zinc=True/False -time=full/no/v1/v2 -phot=PhotPath -fake=FakePath -pars=ParsPath
-	GalName = sys.argv[1]
-	try:
-		Zinc = sys.argv[2][6:]	#form: -zinc=True/False
-	except:
-		Zinc = "False"
-	if Zinc == "True":
-		Zinc = True
-	else:
-		Zinc = False
-	try:
-		tibin = sys.argv[3][6:]	#form: -time=full/no/v1/v2
-		if tibin == "full":
-			tibin = "sfh_fullres"
-		elif tibin == "no":
-			tibin = "sfh_no_res"
-		elif tibin == "v1":
-			tibin = "sfh_starburst_v1res"
-		elif tibin == "v2":
-			tibin = "sfh_starburst_v2res"
-	except:
-		tibin = "sfh_fullres"
-	try:
-		phot = sys.argv[4][6:]
-	except:
-		phot = None
-	try:
-		fake = sys.argv[5][6:]
-	except:
-		fake = None
-	try:
-		pars = sys.argv[6][6:]
-	except:
-		pars = None
-		
+	Zinc = False
+	tibin = "sfh_fullres"
+	phot = None
+	fake = None
+	pars = None
+	for i in range(1,len(sys.argv)):
+		if i == 1:
+			GalName = sys.argv[i]
+		if sys.argv[i][1:5] == "zinc":
+			Zinc = sys.argv[i][6:]
+			if Zinc == "True":
+				Zinc = True
+			else:
+				Zinc = False
+		if sys.argv[i][1:5] == "time":
+			tibin = sys.argv[i][6:]	#form: -time=full/no/v1/v2
+			if tibin == "full":
+				tibin = "sfh_fullres"
+			elif tibin == "no":
+				tibin = "sfh_no_res"
+			elif tibin == "v1":
+				tibin = "sfh_starburst_v1res"
+			elif tibin == "v2":
+				tibin = "sfh_starburst_v2res"
+		if sys.argv[i][1:5] == "phot":
+			phot = sys.argv[i][6:]
+		if sys.argv[i][1:5] == "fake":
+			fake = sys.argv[i][6:]
+		if sys.argv[i][1:5] == "pars":
+			pars = sys.argv[i][6:]
 	#find all cataloged infomation based on galaxy
 	runFit = 1
 	with open('GalCatalog','r') as fobj:
