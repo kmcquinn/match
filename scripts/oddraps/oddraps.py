@@ -632,6 +632,19 @@ def main():
 		Zinc = True
 	else:
 		Zinc = False
+	try:
+		tibin = sys.argv[3][6:]	#form: -time=full/no/v1/v2
+		if tibin == "full":
+			tibin = "sfh_fullres"
+		elif tibin == "no":
+			tibin = "sfh_no_res"
+		elif tibin == "v1":
+			tibin = "sfh_starburst_v1res"
+		elif tibin == "v2":
+			tibin = "sfh_starburst_v2res"
+	except:
+		tibin = "sfh_fullres"
+		
 	#find all cataloged infomation based on galaxy
 	runFit = 1
 	with open('GalCatalog','r') as fobj:
@@ -658,11 +671,7 @@ def main():
 		bestDepth = calcFit(basedir, scriptr, Fstart, Zinc)
 	#print(bestDepth)
 	#now we can run the full calcsfh script for each timebin
-	#fullCalc(scriptr, basedir+"sfh_fullres/", bestDepth, "sfh_fullres", Zinc)
-	#fullCalc(scriptr, basedir+"sfh_no_res/", bestDepth, "sfh_no_res", Zinc)
-	#fullCalc(scriptr, basedir+"sfh_starburst_v1res/", bestDepth, "sfh_starburst_v1res", Zinc)
-	fullCalc(scriptr, basedir+"sfh_starburst_v2res/", bestDepth, "sfh_starburst_v2res", Zinc)
-	#all calcsfh runs have completed. Now to run fake to compute mass/light ratio
+	fullCalc(scriptr, basedir+tibin+"/", bestDepth, tibin, Zinc)
 	#fullFake(basedir, scriptr, basedir+"fakes/", [GalFlux,GalDist], bestDepth, Zinc)
 	
 if __name__ == "__main__":
