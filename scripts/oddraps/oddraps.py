@@ -658,10 +658,10 @@ def main():
 		bestDepth = calcFit(basedir, scriptr, Fstart, Zinc)
 	#print(bestDepth)
 	#now we can run the full calcsfh script for each timebin
-	fullCalc(scriptr, basedir+"sfh_fullres/", bestDepth, "sfh_fullres", Zinc)
-	#fullCalc(scriptr, basedir+"sfh_no_res/", bestDepth, "sfh_no_res")
-	#fullCalc(scriptr, basedir+"sfh_starburst_v1res/", bestDepth, "sfh_starburst_v1res")
-	#fullCalc(scriptr, basedir+"sfh_starburst_v2res/", bestDepth, "sfh_starburst_v2res")
+	#fullCalc(scriptr, basedir+"sfh_fullres/", bestDepth, "sfh_fullres", Zinc)
+	#fullCalc(scriptr, basedir+"sfh_no_res/", bestDepth, "sfh_no_res", Zinc)
+	#fullCalc(scriptr, basedir+"sfh_starburst_v1res/", bestDepth, "sfh_starburst_v1res", Zinc)
+	fullCalc(scriptr, basedir+"sfh_starburst_v2res/", bestDepth, "sfh_starburst_v2res", Zinc)
 	#all calcsfh runs have completed. Now to run fake to compute mass/light ratio
 	#fullFake(basedir, scriptr, basedir+"fakes/", [GalFlux,GalDist], bestDepth, Zinc)
 	
