@@ -506,7 +506,7 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt, zinc):
 	PlotCurve(pwd,xdepth,ydepth)
 	BestPlot(pwd, "out"+'%03d' % (runnum - 1,))
 	g.write("CMD of best run created at out"+'%03d' % (runnum - 1,)+"\n")
-	g.write("curve of growth plotted at CMDcurve.png")
+	g.write("curve of growth plotted at CMDcurve.png"+"\n")
 	#calculate mass/light ratio for galaxy
 	#find total luminosity of best run
 	totlum = calclum(pwd+"out"+'%03d' % (runnum - 1,), galdist)
@@ -518,7 +518,7 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt, zinc):
 	SM, Sm = SpitMag(galvals)
 	g.write("Spitzer absol and appar mag: "+str(SM)+" "+str(Sm)+"\n")
 	LM, Lm = LumMag(pwd+"out"+'%03d' % (runnum - 1,), galvals)
-	g.write("Fake absol and appar mag: "+str(LM)+" "+str(Lm))
+	g.write("Fake absol and appar mag: "+str(LM)+" "+str(Lm)+"\n")
 	
 def SpitMag(galinfo):
 	#finds magnitudes of gal from measured IRAC 3.6 flux
