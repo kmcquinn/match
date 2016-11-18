@@ -290,7 +290,7 @@ def Calcwork(arr):
 	sp.call(comm.split(),stdout=f)
 	f.close()
 	return 0
-def fullCalc(bpath, fullpath, goodDepths, tbins, zinc):
+def fullCalc(bpath, fullpath, goodDepths, tbins, zinc, mist):
 	'''
 	bpath -> /scriptdir/
 	fullpath -> /sfh_fullres/
@@ -324,9 +324,16 @@ def fullCalc(bpath, fullpath, goodDepths, tbins, zinc):
 	minloc, minval = min(enumerate(err), key=operator.itemgetter(1))
 	lgsig, mbol = vals[minloc][0], vals[minloc][1]
 	#run calcsfh once for use with hybridMC
-	comm = "calcsfh "+fullpath+"pars "+photLoc+" "+fakeLoc+" "+fullpath+"out -Kroupa -PARSEC -mcdata"
+	comm1 = "calcsfh "+fullpath+"pars "+photLoc+" "+fakeLoc+" "+fullpath+"out -Kroupa "
+	if mist == True:
+		comm2 = "-MIST "
+	else:
+		comm2 = "-PARSEC "
+	comm3 = "-mcdata"
+	comm4 = ""
 	if zinc == True:
-		comm = comm +" -zinc"
+		comm4 = " -zinc"
+	comm = comm1 + comm2 + comm3 + comm4
 	f = open(fullpath+"console.txt", "wb")	
 	sp.call(comm.split(),stdout=f)
 	f.close()
@@ -337,12 +344,17 @@ def fullCalc(bpath, fullpath, goodDepths, tbins, zinc):
 	f.close()
 	
 	part1 = "calcsfh "+fullpath+"pars "+photLoc+" "+fakeLoc+" "+fullpath+"out_"
-	if zinc == True:
-		part2 = " -Kroupa -PARSEC -zinc -mcdata -mcseed="
+	part2 = " -Kroupa "
+	if mist == True:
+		part3 = "-MIST "
 	else:
-		part2 = " -Kroupa -PARSEC -mcdata -mcseed="
-	part3 = " -logterrsig="
-	part4 = " -mbolerrsig="
+		part3 = "-PARSEC "
+	if zinc == True:
+		part4 = "-zinc -mcdata -mcseed="
+	else:
+		part4 = "-mcdata -mcseed="
+	part5 = " -logterrsig="
+	part6 = " -mbolerrsig="
 	
 	runarr = []
 	for i in range(0,50):
@@ -352,7 +364,7 @@ def fullCalc(bpath, fullpath, goodDepths, tbins, zinc):
 		out_string = "mcseed value " + str(digit) + "=" + str(rand) + "\n"
 		outfile.write(out_string)
 		outfile.close()
-		comm = part1 + digit + part2 + str(rand) + part3 + str(lgsig) + part4 + str(mbol)
+		comm = part1 + digit + part2 + part3 + part4 + str(rand) + part5 + str(lgsig) + part6 + str(mbol)
 		runarr.append([comm, fullpath+"console"+digit])
 	pool = mp.Pool(None)
 	pool.map_async(Calcwork, runarr)	#fills cpu cores with dowork jobs, each with different flail value from runname
@@ -380,7 +392,7 @@ def fullCalc(bpath, fullpath, goodDepths, tbins, zinc):
 def Fakework(comm):
 	sp.call(comm.split())
 	return 0
-def fullFake(galdir, basis, pwd, galvals, goodfilt, zinc):
+def fullFake(galdir, basis, pwd, galvals, goodfilt, zinc, mist):
 	#finds filter values that max. total lum. in output file. Uses this to find M/L ratio of galaxy
 	
 	#dumb paramater naming here
@@ -396,7 +408,7 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt, zinc):
 	galflux, galdist = galvals
 	
 	
-	sp.call(["mkdir",galdir+"fakes"])
+	sp.call(["mkdir",pwd])
 	makePars(galdir, pwd+"CparsBasis", goodfilt, "sfh_fullres", zinc)
 	
 	#use values to create start of fake pars file (up until timebins)
@@ -420,7 +432,10 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt, zinc):
 	f.close()
 	
 	#open out.final from sfh_fullres, needed for sfr z values
-	h = open(galdir+"sfh_fullres/out.final","r")
+	try:
+		h = open(galdir+"sfh_fullresMIST/out.final","r")	
+	except:
+		h = open(galdir+"sfh_fullres/out.final","r")
 	galmass = float(h.readline().split()[1])	#store gal mass for later, also sets file up to start reading timebins
 	j = open("sfh_fullres", 'r') 	#open timebin file for # of timebins
 	tbins = int(j.readline().split()[0])	#record number of timebins
@@ -450,7 +465,12 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt, zinc):
 	with open(pwd+"footer", 'r') as fobj:
 		for line in fobj:
 			t.write(line)
-	comm = 'fake '+pwd+'parstest '+pwd+'outtest -full -KROUPA -PARSEC'
+	comm1 = 'fake '+pwd+'parstest '+pwd+'outtest -full -KROUPA '
+	if mist == True:
+		comm2 = "-MIST"
+	else:
+		comm2 = "-PARSEC"
+	comm = comm1 + comm2
 	sp.call(comm.split())
 	sold = []
 	sold.append(calclum(pwd+"outtest", galdist))
@@ -479,7 +499,12 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt, zinc):
 			totest[3] = 34.0
 			permlist.append(totest)
 			makeFakePars(pwd, 'TEST'+strflail, totest)	#make pars file with 'test' to indicate temp file
-			comm = 'fake '+pwd+'fakepars'+'TEST'+strflail+' '+pwd+'out'+'TEST'+strflail+' -full -KROUPA -PARSEC'
+			comm1 = 'fake '+pwd+'fakepars'+'TEST'+strflail+' '+pwd+'out'+'TEST'+strflail+' -full -KROUPA '
+			if mist == True:
+				comm2 = "-MIST"
+			else:
+				comm2 = "-PARSEC"
+			comm = comm1 + comm2
 			commlist.append(comm)
 			flail = flail + 1
 		pool = mp.Pool(None)
@@ -627,12 +652,18 @@ def main():
 	    You will need setFolder and editFiles the first time on a given galaxy in order to run any other functions
 	    Information from each function is not ingelligently stored (ie saved in reference file to save time on repeat runs). I'll add this once everything works.
 	'''
-	#python oddraps.py GalFolder -zinc=True/False -time=full/no/v1/v2 -phot=PhotPath -fake=FakePath -pars=ParsPath
+	#python oddraps.py GalFolder -zinc=True/False -time=full/no/v1/v2 -phot=PhotPath -fake=FakePath -pars=ParsPath -mist=True/False
+	#pars for fullCalc: fullCalc(scriptr, basedir+tibin+"/", bestDepth, tibin=", Zinc, Mist)
+	'''
+	adding mist to oddraps:
+		2. Change fullCalc/fullFake to change comm's based on zinc flag
+	'''
 	Zinc = False
 	tibin = "sfh_fullres"
 	phot = None
 	fake = None
 	pars = None
+	mist = False
 	for i in range(1,len(sys.argv)):
 		if i == 1:
 			GalName = sys.argv[i]
@@ -658,6 +689,12 @@ def main():
 			fake = sys.argv[i][6:]
 		if sys.argv[i][1:5] == "pars":
 			pars = sys.argv[i][6:]
+		if sys.argv[i][1:5] == "mist":
+			mist = sys.argv[i][6:]
+			if mist == "True":
+				mist = True
+			else:
+				mist = False
 	#find all cataloged infomation based on galaxy
 	runFit = 1
 	with open('GalCatalog','r') as fobj:
@@ -684,8 +721,14 @@ def main():
 		bestDepth = calcFit(basedir, scriptr, Fstart, Zinc)
 	#print(bestDepth)
 	#now we can run the full calcsfh script for each timebin
-	fullCalc(scriptr, basedir+tibin+"/", bestDepth, tibin, Zinc)
-	#fullFake(basedir, scriptr, basedir+"fakes/", [GalFlux,GalDist], bestDepth, Zinc)
+	if mist == True:
+		calcfolder = basedir+tibin+"MIST"+"/"
+		fakefolder = basedir+"fakesMIST/"
+	else:
+		calcfolder = basedir+tibin+"/"
+		fakefolder = basedir+"fakes/"
+	fullCalc(scriptr, calcfolder, bestDepth, tibin, Zinc, mist)
+	#fullFake(basedir, scriptr, fakefolder, [GalFlux,GalDist], bestDepth, Zinc, mist)
 	
 if __name__ == "__main__":
     main()
