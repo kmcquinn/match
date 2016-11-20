@@ -230,7 +230,10 @@ def calcFit(bir, scr, filtStart, zinc):
 	#record this value to sold array
 	sold[0] = fitval
 	'''
-	delta = .05		#choose how much values differ between runs
+	#let blue vary from 31 to 41
+	#let red vary from 31 to 41
+	
+	delta = .1		#choose how much values differ between runs
 	maxdelta = .25		#choose max deviation from start values
 	runnum = 1		#keeps track of number of completed cycles
 	maxrun = int(maxdelta/delta)
@@ -241,16 +244,16 @@ def calcFit(bir, scr, filtStart, zinc):
 	fitlist = []
 	g = open(scrstring+"FiltResults","w")
 	g.write("Run Number\tDepth1\tDepth2\tFit Value\n")
-	for i in range(-maxrun,maxrun+1):
-		for j in range(-maxrun,maxrun+1):
+	for i in range(31.0,41.0,delta):
+		for j in range(31.0,41.0,delta):
 			strflail = '%03d' % (flail,)		#convert run number to string for out files
 			commdict[flail] = [strflail]
 			parspath = scrstring+"calcparsTEST"+strflail	#paths to calcsfh files
 			outpath = scrstring+"outTEST"+strflail
 			consolepath = scrstring+"consoleTEST"+strflail
 			totest = sold[1:]	#changing depth values up or down by delta
-			totest[1] = totest[1] + i * delta
-			totest[3] = totest[3] + j * delta
+			totest[1] = i
+			totest[3] = j
 			commdict[flail].append(totest)
 			makePars(bir, parspath, totest, "sfh_fullres", zinc)	#make pars file with 'test' to indicate temp file
 			comm = "calcsfh "+parspath+" "+scrPhot+" "+scrFake+" "+outpath+" -Kroupa -PARSEC"	#command to send out
@@ -477,7 +480,7 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt, zinc, mist):
 	sold = sold + goodfilt	#list has starting lum and starting filter values
 	
 	#here is where we actually find the best filter values
-	delta = .25		#choose how much values differ between runs
+	delta = .05		#choose how much values differ between runs
 	runnum = 0		#keeps track of number of completed cycles
 	xdepth = []
 	ydepth = []
