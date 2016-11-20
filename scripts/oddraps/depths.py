@@ -234,7 +234,7 @@ def calcFit(bir, scr, filtStart, zinc):
 	#let blue vary from 31 to 41
 	#let red vary from 31 to 41
 	
-	delta = .1		#choose how much values differ between runs
+	delta = .33		#choose how much values differ between runs
 	maxdelta = .25		#choose max deviation from start values
 	runnum = 1		#keeps track of number of completed cycles
 	maxrun = int(maxdelta/delta)
