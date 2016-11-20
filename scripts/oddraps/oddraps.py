@@ -246,7 +246,7 @@ def calcFit(bir, scr, filtStart, zinc):
 	g = open(scrstring+"FiltResults","w")
 	g.write("Run Number\tDepth1\tDepth2\tFit Value\n")
 	bluearr = np.arange(31.0,41.0,delta)
-	redarr = np.arrange(31.0,41.0,delta)
+	redarr = np.arange(31.0,41.0,delta)
 	for i in bluearr:
 		for j in redarr:
 			strflail = '%03d' % (flail,)		#convert run number to string for out files
