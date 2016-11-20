@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import fnmatch
 import multiprocessing as mp
 import os
+import numpy as np
 '''
 HOW TO RUN ODDRAPS:
 1.) Place lastest version in same folder as GalCatalog, sfh_full res file, teffdata file
@@ -244,8 +245,10 @@ def calcFit(bir, scr, filtStart, zinc):
 	fitlist = []
 	g = open(scrstring+"FiltResults","w")
 	g.write("Run Number\tDepth1\tDepth2\tFit Value\n")
-	for i in range(31.0,41.0,delta):
-		for j in range(31.0,41.0,delta):
+	bluearr = np.arange(31.0,41.0,delta)
+	redarr = np.arrange(31.0,41.0,delta)
+	for i in bluearr:
+		for j in redarr:
 			strflail = '%03d' % (flail,)		#convert run number to string for out files
 			commdict[flail] = [strflail]
 			parspath = scrstring+"calcparsTEST"+strflail	#paths to calcsfh files
