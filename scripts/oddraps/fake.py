@@ -483,7 +483,7 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt, zinc, mist):
 	sold = sold + goodfilt	#list has starting lum and starting filter values
 	
 	#here is where we actually find the best filter values
-	delta = .05		#choose how much values differ between runs
+	delta = .1		#choose how much values differ between runs
 	runnum = 0		#keeps track of number of completed cycles
 	xdepth = []
 	ydepth = []
@@ -496,7 +496,7 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt, zinc, mist):
 		lumlist = []	#records lum in given run
 		permlist = []	#records filter values in given run
 		commlist = []	
-		for w in range(-12,24):	#go through each perm of var inc/dec
+		for w in range(-80,80):	#go through each perm of var inc/dec
 			#for x in range(-12,15):
 			strflail = '%03d' % (flail,)		#convert run number to string for out files
 			totest = sold[1:]			#grab values stored at end of previous cycle
