@@ -7,6 +7,7 @@ import numpy as np
 from sys import argv as arg
 import os
 from astropy.table import Table,Column,hstack,vstack
+import glob
 zsol = 8.69     # Solar z
 fake = 8.0     # Test gas z
 
@@ -102,7 +103,7 @@ Calculates the mass of oxygen in the gas.
 
 def cogas(nam):     # nam = galaxy name, no 0's before number (ex. UGC8508, not UGC08508)
 
-    if nam[3] == ' ':
+    if len(nam)!= 3 and nam[3] == ' ':
         nam = nam[0:3]+nam[4:]
 ############### Takes O abundance from known data ###################
 
@@ -221,99 +222,18 @@ def maketab(nam,filnam):
 # Proper syntax: python calcmet.py [name of output file] [name of galaxy]
 
 def main():
-    define(arg[1])
-    gastab('galaxy_list_O.txt')
-    hitab('metals_opticaldata.txt')
-    # Using these values, calculates the oxygen budget and prints results.
-    a=cogas(arg[2])
-    b=costar(dat['sfr'],dat['start'],dat['end'],dat['met'])
-    c1,c2,c3=cogal(totsf)
+	res="sfh_fullres"
+	galdir='/work/04316/kmcquinn/wrangler/metals/galaxies/acs'
+	nam=open('filnam','r')
+	with open('filnam') as f:
+		bu=f.read().splitlines()
+	naml=[]
+	for i in bu:
+		naml.append(i.split("\t"))
+	dnam=[i[0] for i in naml]
+	name=[i[1] for i in naml]
+	for i in naml:
+		maketab(i[1],galdir+'/'+i[0]+'/metals_proc/'+res+'/out.final')
 
-    print hi('gal')
-    #print obud(a,b,c1)
-    #print obud(a,b,c2)
-    #print obud(a,b,c3)
-
-'''
-Write to table, add galaxies
-'''
-
-
-#if __name__ == '__main__':
-#    main()
-
-
-# # Here's some scratch code!
-#   sm = []     # Stellar mass for each time bin
-#    for i in range(len(r)):
-#        sm.append(float(r[i])*(float(et[i])-float(st[i])))
-#    om = []
-#    for i in range(len(r)):
-#        om.append((1-Rec)*sum(sm[i]*somd[i]))
-#    return om
-
-
-
-def calcstar(r,st,et,z):    
-    if type(z) == list:
-        z = float(z[len(z)-1])
-    ond = z+zsol     # Oxygen number density in stars
-    a=10**(ond-12)
-    b=np.log10((16.)/(0.75*1.0079) + 0.25*4.0026)
-    omd = a+b # Oxygen mass density in stars
-    osca = .5     # Oxygen scale factor (need to find actual value)
-    somd = 10**omd*osca     # Scaled oxygen mass density
-    Rec = .3     # Recycled percentage of oxygen
-    sm = []
-    for i in range(len(r)):
-        sm.append(float(r[i])*(float(et[i])-float(st[i])))
-    om = (1-Rec)*sum(sm*somd)
-    return om
-    
-
-def define(bop):
-    global totsf
-    global totsfu
-    global totsfl
-    global begt
-    global endt
-    global sfr
-    global sfru
-    global sfrl
-    global met
-    global metu
-    global metl
-    global csf
-    global csfu
-    global csfl
-
-    # Read out.final file
-    chop = open(bop,'r')
-    fir = chop.readline()
-
-    # Total Star Formation Rate
-    totsf = fir.split()[1]
-    totsfu = fir.split()[2]
-    totsfl = fir.split()[3]
-
-    dat = chop.read()
-    chop.close()
-
-    # Start and End Times
-    begt=dat.split()[::15]
-    endt=dat.split()[1::15]
-
-    # Star Formation Rates
-    sfr=dat.split()[3::15]
-    sfru=dat.split()[4::15]
-    sfrl=dat.split()[5::15]
-
-    # Metallicity
-    met=dat.split()[6::15]
-    metu=dat.split()[7::15]
-    metl=dat.split()[8::15]
-
-    # Cumulative SFR
-    csf=dat.split()[12::15]
-    csfu=dat.split()[13::15]
-    csfl=dat.split()[14::15]
+if __name__ == '__main__':
+    main()
