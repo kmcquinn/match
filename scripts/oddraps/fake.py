@@ -140,7 +140,9 @@ def makePars(basepath, newpath, depths, times, zinc):
 	p.write(g.readline())
 	line2 = g.readline()[:-1]
 	if zinc == True:
-		line2 = line2 + " -2.3 -0.9 -1.6 0.1"
+		line2 = "-2.0 0.1 0.1 -2.0 -0.9 -1.6 0.1"
+	else:
+		line2 = "-2.0 0.1 0.1"
 	line2 = line2+"\n"
 	p.write(line2)
 	for i in range(0,3):
@@ -733,7 +735,7 @@ def main():
 	else:
 		calcfolder = basedir+tibin+"/"
 		fakefolder = basedir+"fakes/"
-	#fullCalc(scriptr, calcfolder, bestDepth, tibin, Zinc, mist)
+	fullCalc(scriptr, calcfolder, bestDepth, tibin, Zinc, mist)
 	fullFake(basedir, scriptr, fakefolder, [GalFlux,GalDist], bestDepth, Zinc, mist)
 	
 if __name__ == "__main__":
