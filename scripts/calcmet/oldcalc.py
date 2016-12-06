@@ -1,17 +1,23 @@
 
 # coding: utf-8
 
-# In[118]:
+# In[47]:
 
 import numpy as np
 from sys import argv as arg
 import os
 from astropy.table import Table,Column,hstack,vstack
+import glob
 zsol = 8.69     # Solar z
 fake = 8.0     # Test gas z
 
+'''
+To Do:
+- Fix cogas
+'''
 
-# In[119]:
+
+# In[2]:
 
 # Searches for item in a list and returns the index of the item in the list if it is in the list
 def itin(x,pop):
@@ -73,7 +79,7 @@ def hitab(boop):
     hi=Table(rows=ale,names=['gal','loghi','dist'],dtype=['S','f8','f8'])
 
 
-# In[120]:
+# In[35]:
 
 '''
 Calculates the amount of oxygen formed in the galaxy with 3 different nucleosynthesis yields from 
@@ -88,7 +94,7 @@ def cogal(t,u,l):     # t = total star formation
     return [[t*p1,u*p1,l*p1],[t*p2,u*p2,l*p2],[t*p3,u*p3,l*p3]]
 
 
-# In[121]:
+# In[36]:
 
 '''
 Calculates the mass of oxygen in the gas.
@@ -147,7 +153,7 @@ def cogas(nam):     # nam = galaxy name, no 0's before number (ex. UGC8508, not 
     return gm*16.*10**(z-12.)
 
 
-# In[122]:
+# In[37]:
 
 '''
 Calculates the amount of oxygen locked in the stars.
@@ -173,7 +179,7 @@ def costar(r,ru,rl,st,et,z,zerru,zerrl):    # Takes sfr, sfr upper and lower unc
     return sum(om)     # Total oxygen mass in stars
 
 
-# In[123]:
+# In[38]:
 
 '''
 Calculates the total oxygen budget.
@@ -183,7 +189,7 @@ def obud(g,s,t):     # Takes oxygen in gas, stars, and total oxygen formed
     err=0
 
 
-# In[124]:
+# In[95]:
 
 '''
 Add results to a really ugly file.
@@ -196,46 +202,38 @@ def maketab(nam,filnam):
     a=cogas(nam)
     b=costar(dat['sfr'],dat['sfru'],dat['sfrl'],dat['start'],dat['end'],dat['met'],dat['metu'],dat['metl'])
     c1,c2,c3=cogal(totsf,totsfu,totsfl)
-    if a[:2]!='No':
-        if 'results' in os.listdir("."):
-            thi=open('results','a')
-            thi.write('\n')
-            thi.write(nam+'\t'+str(a)+'\t'+str(b)+'\t'+str(c1[0])+'\t'+str(c1[1])+'\t'+str(c1[2])+'\t'+str(c2[0])+'\t'
-                      +str(c2[1])+'\t'+str(c2[2])+'\t'+str(c3[0])+'\t'+str(c3[1])+'\t'+str(c3[2]))
-            thi.close()
-        else:
-            thi=open('results','w')
-            thi.write('Name\tO_gas\tO_star\tTot1\t+\t-\tTot2\t+\t-\tTot3\t+\t-')
-            thi.write('\n')
-            thi.write(nam+'\t'+str(a)+'\t'+str(b)+'\t'+str(c1[0])+'\t'+str(c1[1])+'\t'+str(c1[2])+'\t'+str(c2[0])+'\t'
-                      +str(c2[1])+'\t'+str(c2[2])+'\t'+str(c3[0])+'\t'+str(c3[1])+'\t'+str(c3[2]))
-            thi.close()
+    if 'results' in os.listdir("."):
+        thi=open('results','a')
+        thi.write('\n')
+        thi.write(nam+'\t'+str(a)+'\t'+str(b)+'\t'+str(c1[0])+'\t'+str(c1[1])+'\t'+str(c1[2])+'\t'+str(c2[0])+'\t'
+                  +str(c2[1])+'\t'+str(c2[2])+'\t'+str(c3[0])+'\t'+str(c3[1])+'\t'+str(c3[2]))
+        thi.close()
+    else:
+        thi=open('results','w')
+        thi.write('Name\tO_gas\tO_star\tTot1\t+\t-\tTot2\t+\t-\tTot3\t+\t-')
+        thi.write('\n')
+        thi.write(nam+'\t'+str(a)+'\t'+str(b)+'\t'+str(c1[0])+'\t'+str(c1[1])+'\t'+str(c1[2])+'\t'+str(c2[0])+'\t'
+                  +str(c2[1])+'\t'+str(c2[2])+'\t'+str(c3[0])+'\t'+str(c3[1])+'\t'+str(c3[2]))
+        thi.close()
 
 
-# In[125]:
+# In[44]:
 
 # Proper syntax: python calcmet.py [name of output file] [name of galaxy]
 
 def main():
-        res="sfh_fullres"
-        galdir='/work/04316/kmcquinn/wrangler/metals/galaxies/acs'
-        nam=open('filnam','r')
-        with open('filnam') as f:
-                bu=f.read().splitlines()
-        naml=[]
-        for i in bu:
-                naml.append(i.split("\t"))
-        dnam=[i[0] for i in naml]
-        name=[i[1] for i in naml]
-        for i in naml:
-                maketab(i[1],galdir+'/'+i[0]+'/metals_proc/'+res+'/out.final')
-    
+	res="sfh_fullres"
+	galdir='/work/04316/kmcquinn/wrangler/metals/galaxies/acs'
+	nam=open('filnam','r')
+	with open('filnam') as f:
+		bu=f.read().splitlines()
+	naml=[]
+	for i in bu:
+		naml.append(i.split("\t"))
+	dnam=[i[0] for i in naml]
+	name=[i[1] for i in naml]
+	for i in naml:
+		maketab(i[1],galdir+'/'+i[0]+'/metals_proc/'+res+'/out.final')
 
 if __name__ == '__main__':
     main()
-
-
-# In[ ]:
-
-
-
