@@ -632,8 +632,11 @@ def calclum(path_to_fakeout, galdist):
 	with open(path_to_fakeout) as fobj:
 		for line in fobj:
 			row = line.split()
-			if float(row[0]) < 98.0 and float(row[1]) < 98.0:
-				mbol.append(float(row[0]))	#only concerned with IRAC3.6 mag
+			try:
+				if float(row[0]) < 98.0 and float(row[1]) < 98.0:
+					mbol.append(float(row[0]))	#only concerned with IRAC3.6 mag
+			except:
+				print("for some reason this happened:", row)
 	#convert mbol list to luminosity values
 	for i in range(0, len(mbol)):
 		mbol[i] = 10 ** ((1/2.5)*(-mbol[i]+logdist+3.24))	#units of solar luminosity
@@ -735,7 +738,7 @@ def main():
 	else:
 		calcfolder = basedir+tibin+"/"
 		fakefolder = basedir+"fakes/"
-	fullCalc(scriptr, calcfolder, bestDepth, tibin, Zinc, mist)
+	#fullCalc(scriptr, calcfolder, bestDepth, tibin, Zinc, mist)
 	fullFake(basedir, scriptr, fakefolder, [GalFlux,GalDist], bestDepth, Zinc, mist)
 	
 if __name__ == "__main__":
