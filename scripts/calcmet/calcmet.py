@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[118]:
+# In[126]:
 
 import numpy as np
 from sys import argv as arg
@@ -11,7 +11,7 @@ zsol = 8.69     # Solar z
 fake = 8.0     # Test gas z
 
 
-# In[119]:
+# In[127]:
 
 # Searches for item in a list and returns the index of the item in the list if it is in the list
 def itin(x,pop):
@@ -73,7 +73,7 @@ def hitab(boop):
     hi=Table(rows=ale,names=['gal','loghi','dist'],dtype=['S','f8','f8'])
 
 
-# In[120]:
+# In[128]:
 
 '''
 Calculates the amount of oxygen formed in the galaxy with 3 different nucleosynthesis yields from 
@@ -88,7 +88,7 @@ def cogal(t,u,l):     # t = total star formation
     return [[t*p1,u*p1,l*p1],[t*p2,u*p2,l*p2],[t*p3,u*p3,l*p3]]
 
 
-# In[121]:
+# In[129]:
 
 '''
 Calculates the mass of oxygen in the gas.
@@ -147,7 +147,7 @@ def cogas(nam):     # nam = galaxy name, no 0's before number (ex. UGC8508, not 
     return gm*16.*10**(z-12.)
 
 
-# In[122]:
+# In[130]:
 
 '''
 Calculates the amount of oxygen locked in the stars.
@@ -173,7 +173,7 @@ def costar(r,ru,rl,st,et,z,zerru,zerrl):    # Takes sfr, sfr upper and lower unc
     return sum(om)     # Total oxygen mass in stars
 
 
-# In[123]:
+# In[131]:
 
 '''
 Calculates the total oxygen budget.
@@ -196,7 +196,7 @@ def maketab(nam,filnam):
     a=cogas(nam)
     b=costar(dat['sfr'],dat['sfru'],dat['sfrl'],dat['start'],dat['end'],dat['met'],dat['metu'],dat['metl'])
     c1,c2,c3=cogal(totsf,totsfu,totsfl)
-    if a[:2]!='No':
+    if a is float or a is list and a[:2]!='No':
         if 'results' in os.listdir("."):
             thi=open('results','a')
             thi.write('\n')

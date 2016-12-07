@@ -7,14 +7,8 @@ import numpy as np
 from sys import argv as arg
 import os
 from astropy.table import Table,Column,hstack,vstack
-import glob
 zsol = 8.69     # Solar z
 fake = 8.0     # Test gas z
-
-'''
-To Do:
-- Fix cogas
-'''
 
 
 # In[2]:
