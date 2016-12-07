@@ -740,8 +740,8 @@ def main():
 		fakefolder = basedir+"fakes/"
 	#fullCalc(scriptr, calcfolder, bestDepth, tibin, Zinc, mist)
 	datName = GalName+"_store"
-	comm = "mkdir $DATA/"+datName
-	datdir = "$DATA/"+GalName+"_store/"
+	comm = "mkdir /data/02799/bmc2579/"+datName
+	datdir = "/data/02799/bmc2579/"+GalName+"_store/"
 	sp.call(comm.split())
 	fullFake(basedir, scriptr, fakefolder, [GalFlux,GalDist], bestDepth, Zinc, mist, datdir)
 	
