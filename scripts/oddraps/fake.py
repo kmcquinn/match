@@ -400,7 +400,7 @@ def fullCalc(bpath, fullpath, goodDepths, tbins, zinc, mist):
 def Fakework(comm):
 	sp.call(comm.split())
 	return 0
-def fullFake(galdir, basis, pwd, galvals, goodfilt, zinc, mist):
+def fullFake(galdir, basis, pwd, galvals, goodfilt, zinc, mist, datdir):	
 	#finds filter values that max. total lum. in output file. Uses this to find M/L ratio of galaxy
 	
 	#dumb paramater naming here
@@ -473,7 +473,7 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt, zinc, mist):
 	with open(pwd+"footer", 'r') as fobj:
 		for line in fobj:
 			t.write(line)
-	comm1 = 'fake '+pwd+'parstest '+pwd+'outtest -full -KROUPA '
+	comm1 = 'fake '+pwd+'parstest '+datdir+'outtest -full -KROUPA '
 	if mist == True:
 		comm2 = "-MIST"
 	else:
@@ -481,7 +481,7 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt, zinc, mist):
 	comm = comm1 + comm2
 	sp.call(comm.split())
 	sold = []
-	sold.append(calclum(pwd+"outtest", galdist))
+	sold.append(calclum(datdir+"outtest", galdist))
 	sold = sold + goodfilt	#list has starting lum and starting filter values
 	
 	#here is where we actually find the best filter values
@@ -507,7 +507,7 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt, zinc, mist):
 			totest[3] = 34.0
 			permlist.append(totest)
 			makeFakePars(pwd, 'TEST'+strflail, totest)	#make pars file with 'test' to indicate temp file
-			comm1 = 'fake '+pwd+'fakepars'+'TEST'+strflail+' '+pwd+'out'+'TEST'+strflail+' -full -KROUPA '
+			comm1 = 'fake '+pwd+'fakepars'+'TEST'+strflail+' '+datdir+'out'+'TEST'+strflail+' -full -KROUPA '
 			if mist == True:
 				comm2 = "-MIST"
 			else:
@@ -521,7 +521,7 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt, zinc, mist):
 		pool.join()	
 		for i in range(0, flail):
 			strflail = '%03d' % (i,)
-			lum = calclum(pwd+'outTEST'+strflail, galdist)
+			lum = calclum(datdir+'outTEST'+strflail, galdist)
 			rfilt = permlist[i][1]
 			xdepth.append(rfilt)
 			ydepth.append(lum)
@@ -533,7 +533,7 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt, zinc, mist):
 			sold[1:] = permlist[maxloc]		#new stored filter values
 			valstr = '%03d' % (maxloc,)		#store best run number as string for out files
 			copyfile(pwd+'fakeparsTEST'+valstr, pwd+'fakepars'+runstr)	#copy temp pars of best run to new file
-			copyfile(pwd+'outTEST'+valstr, pwd+'out'+runstr)				#copy temp out of best run to new file
+			copyfile(datdir+'outTEST'+valstr, pwd+'out'+runstr)				#copy temp out of best run to new file
 			runnum = runnum + 1
 		else:
 			print('Best run found at index '+str(runnum - 1))			
@@ -739,7 +739,11 @@ def main():
 		calcfolder = basedir+tibin+"/"
 		fakefolder = basedir+"fakes/"
 	#fullCalc(scriptr, calcfolder, bestDepth, tibin, Zinc, mist)
-	fullFake(basedir, scriptr, fakefolder, [GalFlux,GalDist], bestDepth, Zinc, mist)
+	datName = GalName+"_store"
+	comm = "mkdir $DATA/"+datName
+	datdir = "$DATA/"+GalName+"_store"
+	sp.call(comm.split())
+	fullFake(basedir, scriptr, fakefolder, [GalFlux,GalDist], bestDepth, Zinc, mist, datdir)
 	
 if __name__ == "__main__":
     main()
