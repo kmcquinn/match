@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[132]:
+# In[63]:
 
 import numpy as np
 from sys import argv as arg
@@ -11,7 +11,7 @@ zsol = 8.69     # Solar z
 fake = 8.0     # Test gas z
 
 
-# In[133]:
+# In[64]:
 
 # Searches for item in a list and returns the index of the item in the list if it is in the list
 def itin(x,pop):
@@ -42,8 +42,7 @@ def define(bop):
     # Create a table with the rest of the data
     dat=Table(rows=dats,names=['start','end','dm','sfr','sfru','sfrl','met','metu','metl','uh',
                                'uhh','well','csf','csfu','csfl'],
-              dtype=['f16','f16','f16','f16','f16','f16','f16','f16','f16','f16','f16','f16','f16',
-                     'f16','f16'])
+              dtype=['f','f','f','f','f','f','f','f','f','f','f','f','f','f','f'])
     
 '''
 Reads in oxygen abundances from galaxy_list_O.txt as the table 'gas'
@@ -55,7 +54,7 @@ def gastab(boop):
     nam=f.readline().split()
     gal=[[i.split()[0],i.split()[3],i.split()[5],i.split()[6],i.split()[8]] for i in f]
     f.close()
-    gas=Table(rows=gal,names=['gal','z','zerr','NO','NOerr'],dtype=['S','f16','f16','f16','f16'])
+    gas=Table(rows=gal,names=['gal','z','zerr','NO','NOerr'],dtype=['S','f8','f8','f8','f8'])
     return gas
 
 '''
@@ -73,7 +72,7 @@ def hitab(boop):
     hi=Table(rows=ale,names=['gal','loghi','dist'],dtype=['S','f8','f8'])
 
 
-# In[134]:
+# In[65]:
 
 '''
 Calculates the amount of oxygen formed in the galaxy with 3 different nucleosynthesis yields from 
@@ -88,7 +87,7 @@ def cogal(t,u,l):     # t = total star formation
     return [[t*p1,u*p1,l*p1],[t*p2,u*p2,l*p2],[t*p3,u*p3,l*p3]]
 
 
-# In[135]:
+# In[66]:
 
 '''
 Calculates the mass of oxygen in the gas.
@@ -144,10 +143,10 @@ def cogas(nam):     # nam = galaxy name, no 0's before number (ex. UGC8508, not 
     agm = 1.33 * ahg     # Total atomic gas mass, includes helium
     mg = 0.1 * agm     # Molecular gas mass (assuming no availabe measurements)
     gm = agm + mg     # Total mass of gas
-    return gm*16.*10**(z-12.)
+    return [gm*16.*10**(z-12.),abs(gm*16.*10**(z-12.)*np.log(10))*zerr]
 
 
-# In[136]:
+# In[67]:
 
 '''
 Calculates the amount of oxygen locked in the stars.
@@ -157,23 +156,35 @@ def costar(r,ru,rl,st,et,z,zerru,zerrl):    # Takes sfr, sfr upper and lower unc
                                             # upper and lower uncertainties
     Rec = 1./3.     # Recycling Fraction
     somd = []     # Scaled oxygen mass density for each time bin
+    somderu = []
+    somderl = []
     sm = []     # Stellar mass for each time bin
+    smeru = []
+    smerl = []
     for i in range(len(z)):
         if r[i] != 0:
             ond = z[i]+zsol     # Oxygen number density in stars
             osca = 1.     # Oxygen scale factor (need to find actual value)
-            # need to propagate some error in the line below this
             somd.append(10**((ond-12)+np.log10((16.)/(0.75*1.0079 + 0.25*4.0026)))*osca)
+            # Next 2 lines are error propagation
+            somderu.append((10**((ond-12)+np.log10((16.)/(0.75*1.0079 + 0.25*4.0026)))*np.log(10)*osca)*zerru[i])
+            somderl.append((10**((ond-12)+np.log10((16.)/(0.75*1.0079 + 0.25*4.0026)))*np.log(10)*osca)*zerrl[i])
             sm.append((10**et[i]-10**st[i])*r[i])
-            # also need to propagate that error up there
+            # Next 2 lines are error propagation
+            smeru.append((10**et[i]-10**st[i])*ru[i])
+            smerl.append((10**et[i]-10**st[i])*rl[i])
     om = []     # Oxygen mass in stars for each time bin
+    omerru = []
+    omerrl = []
     for i in range(len(somd)):
-        # i smell impending error propagation
+        #Next 2 lines are error propagation
         om.append((1-Rec)*sm[i]*somd[i])
-    return sum(om)     # Total oxygen mass in stars
+        omerru.append((((1-Rec)*smeru[i]*somd[i])**2.+((1-Rec)*sm[i]*somderu[i])**2.)**1./2.)
+        omerrl.append((((1-Rec)*smerl[i]*somd[i])**2.+((1-Rec)*sm[i]*somderl[i])**2.)**1./2.)
+    return sum(sm), sum(smeru), sum(smerl)     # Total oxygen mass in stars
 
 
-# In[137]:
+# In[68]:
 
 '''
 Calculates the total oxygen budget.
@@ -183,13 +194,13 @@ def obud(g,s,t):     # Takes oxygen in gas, stars, and total oxygen formed
     err=0
 
 
-# In[138]:
+# In[69]:
 
 '''
 Add results to a really ugly file.
 '''
 # apparently blank.ljust is a good way of making a really pretty file
-def maketab(nam,filnam):
+def maketab(nam,filnam,output):
     define(filnam)
     gastab('galaxy_list_O.txt')
     hitab('metals_opticaldata.txt')
@@ -198,7 +209,7 @@ def maketab(nam,filnam):
     c1,c2,c3=cogal(totsf,totsfu,totsfl)
     if a!='No oxygen abundance available for '+nam+'.' and a!='No HI flux available for '+nam+'.':
         if 'results' in os.listdir("."):
-            thi=open('results','a')
+            thi=open(output,'a')
             thi.write('\n')
             thi.write(nam+'\t'+str(a)+'\t'+str(b)+'\t'+str(c1[0])+'\t'+str(c1[1])+'\t'+str(c1[2])+'\t'+str(c2[0])+'\t'
                       +str(c2[1])+'\t'+str(c2[2])+'\t'+str(c3[0])+'\t'+str(c3[1])+'\t'+str(c3[2]))
@@ -212,9 +223,9 @@ def maketab(nam,filnam):
             thi.close()
 
 
-# In[139]:
+# In[70]:
 
-# Proper syntax: python calcmet.py [name of output file] [name of galaxy]
+# Proper syntax: python calcmet.py [name of file with data in it]
 
 def main():
         res="sfh_fullres"
@@ -227,8 +238,19 @@ def main():
                 naml.append(i.split("\t"))
         dnam=[i[0] for i in naml]
         name=[i[1] for i in naml]
-        for i in naml:
-                maketab(i[1],galdir+'/'+i[0]+'/metals_proc/'+res+'/out.final')
+        
+        mist= "False"
+        for g in range(len(arg)):
+            if g[:6]=='-mist=':
+                mist=g[6:]
+        if mist == "True":
+            for i in naml:
+                maketab(i[1],galdir+'/'+i[0]+'/metals_proc/'+res+'MIST/out.final','mistres_all')
+                maketab(i[1],galdir+'/'+i[0]+'/metals_proc/'+res+'MIST/out.hybrid.final','mistres_nosys')
+        if mist == "False":
+            for i in naml:
+                maketab(i[1],galdir+'/'+i[0]+'/metals_proc/'+res+'/out.final','parsecres_all')
+                maketab(i[1],galdir+'/'+i[0]+'/metals_proc/'+res+'/out.hybrid.final','parsecres_nosys')
     
 
 if __name__ == '__main__':
