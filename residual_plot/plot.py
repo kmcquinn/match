@@ -79,7 +79,7 @@ def plot_Scatter(fig, x, y, subx1, suby2, subsize, title, xlabel, ylabel,linesty
     if len(errlow) == 0:
     	ax.plot(x, y,'k', linestyle = linestyle)
     else:
-    	ax.errorbar(x, y, yerr=[errlow, errhigh], fmt='k', ecolor='g')
+    	ax.errorbar(x, y, yerr=[errlow, errhigh], fmt='k', ecolor='g', elinewidth=0.5)
     ax.set_title(title, fontsize=8)
     ax.set_xlabel(xlabel, fontsize=8)
     ax.set_ylabel(ylabel, fontsize=8)
