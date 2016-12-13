@@ -145,8 +145,8 @@ for i in range(71):
     met_up[i] = metup
     met_low[i] = metdown
     csf_arr[i] = csf
-    csf_up[i] = csfup
-    csf_low[i] = csfdown
+    csf_up[i] = csf + csfup
+    csf_low[i] = csf - csfdown
 outfile.close
 
 age_arr = [10**(n)/1e9 for n in lage_arr]
