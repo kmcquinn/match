@@ -115,16 +115,20 @@ csfr_arr=np.zeros(71)
 To_arr = np.zeros(71)
 Tf_arr = np.zeros(71)
 met_arr = np.zeros(71)
+met_up = np.zeros(71)
+met_low = np.zeroes(71)
 line =outfile.readline()
 totalSF = float(line.split()[1])
 for i in range(71):
     line = outfile.readline().split()
-    age, Tf, x, sfr, y, z, met = [float(n) for n in line[:7]]
+    age, Tf, x, sfr, y, z, met, metup, metdown = [float(n) for n in line[:7]]
     lage_arr[i]=age
     sfr_arr[i]=sfr
     sfr_high[i] = y
     sfr_low[i] = z
     met_arr[i]=met
+    met_up[i] = metup
+    met_down[i] = metdown
 outfile.close
 
 age_arr = [10**(n)/1e9 for n in lage_arr]
@@ -161,8 +165,8 @@ ax_1 = plot_Scatter(fig, lage_arr, csfr_arr, subx2, suby3, subsize, '(b) Cumulat
 ax_4 = plot_Scatter(fig, age_arr, csfr_arr, subx3, suby3, subsize, '(c) Cumulative Star Formation', 'age (Gyr)', 'SF','solid')
 
 
-ax_3 = plot_Scatter(fig, lage_arr, met_arr, subx2, suby1, subsize, '(h) Metallicity', 'log(age)','Z','solid')
+ax_3 = plot_Scatter(fig, lage_arr, met_arr, subx2, suby1, subsize, '(h) Metallicity', 'log(age)','Z','solid', met_down, met_up)
 
-ax_6 = plot_Scatter(fig, age_arr, met_arr, subx3, suby1, subsize, '(i) Metallicity', 'age (Gyr)', 'Z','solid')
+ax_6 = plot_Scatter(fig, age_arr, met_arr, subx3, suby1, subsize, '(i) Metallicity', 'age (Gyr)', 'Z','solid', met_down, met_up)
 
 fig.savefig(plot_name, dpi=300, bbox_inches='tight')
