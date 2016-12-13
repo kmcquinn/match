@@ -76,9 +76,10 @@ def plot_HessD(fig, arr, subx1, suby2, subsize, extent, interpolation,
 
 def plot_Scatter(fig, x, y, subx1, suby2, subsize, title, xlabel, ylabel,linestyle, errlow=[], errhigh=[]):
     ax = fig.add_axes([subx1, suby2, subsize, subsize])
-    ax.plot(x, y,'k', linestyle = linestyle)
-    if len(errlow) > 0:
-    	ax.errorbar(x, y, yerr=[errlow, errhigh])
+    if len(errlow) == 0:
+    	ax.plot(x, y,'k', linestyle = linestyle)
+    else:
+    	ax.errorbar(x, y, yerr=[errlow, errhigh], fmt='k')
     ax.set_title(title, fontsize=8)
     ax.set_xlabel(xlabel, fontsize=8)
     ax.set_ylabel(ylabel, fontsize=8)
