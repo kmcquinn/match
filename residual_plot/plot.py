@@ -121,7 +121,7 @@ line =outfile.readline()
 totalSF = float(line.split()[1])
 for i in range(71):
     line = outfile.readline().split()
-    age, Tf, x, sfr, y, z, met, metup, metdown = [float(n) for n in line[:7]]
+    age, Tf, x, sfr, y, z, met, metup, metdown = [float(n) for n in line[:9]]
     lage_arr[i]=age
     sfr_arr[i]=sfr
     sfr_high[i] = y
