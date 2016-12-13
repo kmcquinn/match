@@ -1,7 +1,7 @@
-GalName			Dir	Flux		DistanceMPC	Ra	Rb	Ba	Bb	Full	No	SB1	SB2	Fake	IRAC	ACS	M/L
-10210_UGC8651		acs	5.93e-3		3.02		19.71	27.96	19.22	27.12	P!	P!	P!	P!	C	f	f	1.45
-10210_UGC9128		acs	3.12e-3		2.30		18.88	27.88	18.38	27.08	P!	P!	P!	P!	C	f	f	1.31
-10605_NGC-2366-1	acs	6.85e-2		3.19		19.17	28.59	18.65	25.29	P!	P!	P!	P!	C	?	?	0.66
+GalName			Dir	Flux		DistanceMPC	Ra	Rb	Ba	Bb	Full	No	SB1	SB2	Fake	IRAC	ACS	M/L	mM/l
+10210_UGC8651		acs	5.93e-3		3.02		19.71	27.96	19.22	27.12	M!	P!	P!	P!	M	f	f	1.45	1.13
+10210_UGC9128		acs	3.12e-3		2.30		18.88	27.88	18.38	27.08	M!	P!	P!	P!	M	f	f	1.31	1.07
+10605_NGC-2366-1	acs	6.85e-2		3.19		19.17	28.59	18.65	25.29	M!	P!	P!	P!	C	?	?	0.66
 10605_NGC-2366-2	acs	6.85e-2		3.19		19.62	29.58	19.10	25.95	P!	P!	P!	P!	C	?	?	0.85
 10605_UGC-04459		acs	4.27e-3		3.56		21.01	28.31	20.52	27.87	P!	P!	P!	P!	C	f	f	0.85
 10605_UGC-4305-1	acs	7.75e-2		3.39		19.99	27.99	19.47	27.17
