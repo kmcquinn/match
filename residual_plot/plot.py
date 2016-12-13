@@ -116,7 +116,7 @@ To_arr = np.zeros(71)
 Tf_arr = np.zeros(71)
 met_arr = np.zeros(71)
 met_up = np.zeros(71)
-met_low = np.zeroes(71)
+met_low = np.zeros(71)
 line =outfile.readline()
 totalSF = float(line.split()[1])
 for i in range(71):
