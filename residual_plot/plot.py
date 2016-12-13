@@ -111,7 +111,7 @@ res_arr, sig_arr = np.zeros(shape), np.zeros(shape)
 for i in range(shape[0]):
     for j in range(shape[1]):
         line = cmdfile.readline().split()
-        mag, col, obs, mod, res, sig = [float(n) for n in line[:5]]
+        mag, col, obs, mod, res, sig = [float(n) for n in line[:6]]
         colbins[j] = col
         obs_arr[i, j], mod_arr[i, j] = obs, mod
         res_arr[i, j], sig_arr[i, j] = res, sig
