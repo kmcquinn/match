@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[63]:
+# In[28]:
 
 import numpy as np
 from sys import argv as arg
@@ -11,7 +11,7 @@ zsol = 8.69     # Solar z
 fake = 8.0     # Test gas z
 
 
-# In[64]:
+# In[29]:
 
 # Searches for item in a list and returns the index of the item in the list if it is in the list
 def itin(x,pop):
@@ -72,7 +72,7 @@ def hitab(boop):
     hi=Table(rows=ale,names=['gal','loghi','dist'],dtype=['S','f8','f8'])
 
 
-# In[65]:
+# In[30]:
 
 '''
 Calculates the amount of oxygen formed in the galaxy with 3 different nucleosynthesis yields from 
@@ -87,7 +87,7 @@ def cogal(t,u,l):     # t = total star formation
     return [[t*p1,u*p1,l*p1],[t*p2,u*p2,l*p2],[t*p3,u*p3,l*p3]]
 
 
-# In[66]:
+# In[31]:
 
 '''
 Calculates the mass of oxygen in the gas.
@@ -146,7 +146,7 @@ def cogas(nam):     # nam = galaxy name, no 0's before number (ex. UGC8508, not 
     return [gm*16.*10**(z-12.),abs(gm*16.*10**(z-12.)*np.log(10))*zerr]
 
 
-# In[67]:
+# In[32]:
 
 '''
 Calculates the amount of oxygen locked in the stars.
@@ -162,13 +162,13 @@ def costar(r,ru,rl,st,et,z,zerru,zerrl):    # Takes sfr, sfr upper and lower unc
     smeru = []
     smerl = []
     for i in range(len(z)):
-        if r[i] != 0:
+        if r[i] != 0 and z[i] != 0:
             ond = z[i]+zsol     # Oxygen number density in stars
             osca = 1.     # Oxygen scale factor (need to find actual value)
-            somd.append(10**((ond-12)+np.log10((16.)/(0.75*1.0079 + 0.25*4.0026)))*osca)
+            somd.append(10**(ond-12+np.log10((16.)/(0.75*1.0079 + 0.25*4.0026)))*osca)
             # Next 2 lines are error propagation
-            somderu.append((10**((ond-12)+np.log10((16.)/(0.75*1.0079 + 0.25*4.0026)))*np.log(10)*osca)*zerru[i])
-            somderl.append((10**((ond-12)+np.log10((16.)/(0.75*1.0079 + 0.25*4.0026)))*np.log(10)*osca)*zerrl[i])
+            somderu.append((10**(ond-12+np.log10((16.)/(0.75*1.0079 + 0.25*4.0026)))*np.log(10)*osca)*zerru[i])
+            somderl.append((10**(ond-12+np.log10((16.)/(0.75*1.0079 + 0.25*4.0026)))*np.log(10)*osca)*zerrl[i])
             sm.append((10**et[i]-10**st[i])*r[i])
             # Next 2 lines are error propagation
             smeru.append((10**et[i]-10**st[i])*ru[i])
@@ -179,22 +179,28 @@ def costar(r,ru,rl,st,et,z,zerru,zerrl):    # Takes sfr, sfr upper and lower unc
     for i in range(len(somd)):
         #Next 2 lines are error propagation
         om.append((1-Rec)*sm[i]*somd[i])
-        omerru.append((((1-Rec)*smeru[i]*somd[i])**2.+((1-Rec)*sm[i]*somderu[i])**2.)**1./2.)
-        omerrl.append((((1-Rec)*smerl[i]*somd[i])**2.+((1-Rec)*sm[i]*somderl[i])**2.)**1./2.)
-    return sum(sm), sum(smeru), sum(smerl)     # Total oxygen mass in stars
+        omerru.append(om[i]*(1-Rec)*((smeru[i]/sm[i])**2.+(somderu[i]/somd[i])**2.)**(1./2.))
+        omerrl.append(om[i]*(1-Rec)*((smerl[i]/sm[i])**2.+(somderl[i]/somd[i])**2.)**(1./2.))
+    return [sum(om), sum(omerru), sum(omerrl)]     # Total oxygen mass in stars
 
 
-# In[68]:
+# In[33]:
 
 '''
 Calculates the total oxygen budget.
 '''
 def obud(g,s,t):     # Takes oxygen in gas, stars, and total oxygen formed
-    ans= (g+s)/t
-    err=0
+    ans=[]
+    erru=[]
+    errl=[]
+    for i in range(len(t)):
+        ans.append((g[0]+s[0])/t[i][0])
+        erru.append(((g[1]+s[1])/(g[0]+s[0])+t[i][1]/t[i][0])*ans[i])
+        errl.append(((g[1]+s[2])/(g[0]+s[0])+t[i][2]/t[i][0])*ans[i])
+    return ans,erru,errl
 
 
-# In[69]:
+# In[34]:
 
 '''
 Add results to a really ugly file.
@@ -206,24 +212,27 @@ def maketab(nam,filnam,output):
     hitab('metals_opticaldata.txt')
     a=cogas(nam)
     b=costar(dat['sfr'],dat['sfru'],dat['sfrl'],dat['start'],dat['end'],dat['met'],dat['metu'],dat['metl'])
-    c1,c2,c3=cogal(totsf,totsfu,totsfl)
+    c=cogal(totsf,totsfu,totsfl)
+    d=obud(a,b,c)
     if a!='No oxygen abundance available for '+nam+'.' and a!='No HI flux available for '+nam+'.':
         if 'results' in os.listdir("."):
             thi=open(output,'a')
             thi.write('\n')
-            thi.write(nam+'\t'+str(a)+'\t'+str(b)+'\t'+str(c1[0])+'\t'+str(c1[1])+'\t'+str(c1[2])+'\t'+str(c2[0])+'\t'
-                      +str(c2[1])+'\t'+str(c2[2])+'\t'+str(c3[0])+'\t'+str(c3[1])+'\t'+str(c3[2]))
+            thi.write(nam+'\t'+d[0][1]+'\t'+d[1][1]+'\t'+d[2][1]+'\t'+str(a[0])+'\t'+str(a[1])+'\t'+str(b[0])+'\t'+str(b[1])
+                      +'\t'+str(b[2])+str(c[0][0])+'\t'+str(c[0][1])+'\t'+str(c[0][2])+'\t'+str(c[1][0])+'\t'
+                      +str(c[1][1])+'\t'+str(c[1][2])+'\t'+str(c[2][0])+'\t'+str(c[2][1])+'\t'+str(c[2][2]))
             thi.close()
         else:
             thi=open('results','w')
-            thi.write('Name\tO_gas\tO_star\tTot1\t+\t-\tTot2\t+\t-\tTot3\t+\t-')
+            thi.write('Name\tMRF\t+\t-\tO_gas\t+/-\tO_star\t+\t-\tTot1\t+\t-\tTot2\t+\t-\tTot3\t+\t-')
             thi.write('\n')
-            thi.write(nam+'\t'+str(a)+'\t'+str(b)+'\t'+str(c1[0])+'\t'+str(c1[1])+'\t'+str(c1[2])+'\t'+str(c2[0])+'\t'
-                      +str(c2[1])+'\t'+str(c2[2])+'\t'+str(c3[0])+'\t'+str(c3[1])+'\t'+str(c3[2]))
+            thi.write(nam+'\t'+d[0][1]+'\t'+d[1][1]+'\t'+d[2][1]+'\t'+str(a[0])+'\t'+str(a[1])+'\t'+str(b[0])+'\t'+str(b[1])
+                      +'\t'+str(b[2])+'\t'+str(c[0][0])+'\t'+str(c[0][1])+'\t'+str(c[0][2])+'\t'+str(c[1][0])+'\t'
+                      +str(c[1][1])+'\t'+str(c[1][2])+'\t'+str(c[2][0])+'\t'+str(c[2][1])+'\t'+str(c[2][2]))
             thi.close()
 
 
-# In[70]:
+# In[35]:
 
 # Proper syntax: python calcmet.py [name of file with data in it]
 
@@ -236,8 +245,6 @@ def main():
         naml=[]
         for i in bu:
                 naml.append(i.split("\t"))
-        dnam=[i[0] for i in naml]
-        name=[i[1] for i in naml]
         
         mist= "False"
         for g in range(len(arg)):
@@ -255,9 +262,4 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-# In[ ]:
-
-
 
