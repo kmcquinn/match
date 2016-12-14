@@ -215,24 +215,24 @@ def maketab(nam,filnam,output):
     c=cogal(totsf,totsfu,totsfl)
     d=obud(a,b,c)
     if a!='No oxygen abundance available for '+nam+'.' and a!='No HI flux available for '+nam+'.':
-        if 'results' in os.listdir("."):
+        if output in os.listdir("."):
             thi=open(output,'a')
             thi.write('\n')
-            thi.write(nam+'\t'+d[0][1]+'\t'+d[1][1]+'\t'+d[2][1]+'\t'+str(a[0])+'\t'+str(a[1])+'\t'+str(b[0])+'\t'+str(b[1])
+            thi.write(nam+'\t'+str(d[0][1])+'\t'+str(d[1][1])+'\t'+str(d[2][1])+'\t'+str(a[0])+'\t'+str(a[1])+'\t'+str(b[0])+'\t'+str(b[1])
                       +'\t'+str(b[2])+str(c[0][0])+'\t'+str(c[0][1])+'\t'+str(c[0][2])+'\t'+str(c[1][0])+'\t'
                       +str(c[1][1])+'\t'+str(c[1][2])+'\t'+str(c[2][0])+'\t'+str(c[2][1])+'\t'+str(c[2][2]))
             thi.close()
         else:
-            thi=open('results','w')
+            thi=open(output,'w')
             thi.write('Name\tMRF\t+\t-\tO_gas\t+/-\tO_star\t+\t-\tTot1\t+\t-\tTot2\t+\t-\tTot3\t+\t-')
             thi.write('\n')
-            thi.write(nam+'\t'+d[0][1]+'\t'+d[1][1]+'\t'+d[2][1]+'\t'+str(a[0])+'\t'+str(a[1])+'\t'+str(b[0])+'\t'+str(b[1])
+            thi.write(nam+'\t'+str(d[0][1])+'\t'+str(d[1][1])+'\t'+str(d[2][1])+'\t'+str(a[0])+'\t'+str(a[1])+'\t'+str(b[0])+'\t'+str(b[1])
                       +'\t'+str(b[2])+'\t'+str(c[0][0])+'\t'+str(c[0][1])+'\t'+str(c[0][2])+'\t'+str(c[1][0])+'\t'
                       +str(c[1][1])+'\t'+str(c[1][2])+'\t'+str(c[2][0])+'\t'+str(c[2][1])+'\t'+str(c[2][2]))
             thi.close()
 
 
-# In[35]:
+# In[36]:
 
 # Proper syntax: python calcmet.py [name of file with data in it]
 
@@ -247,19 +247,24 @@ def main():
                 naml.append(i.split("\t"))
         
         mist= "False"
-        for g in range(len(arg)):
+        for g in arg:
             if g[:6]=='-mist=':
                 mist=g[6:]
         if mist == "True":
             for i in naml:
-                maketab(i[1],galdir+'/'+i[0]+'/metals_proc/'+res+'MIST/out.final','mistres_all')
-                maketab(i[1],galdir+'/'+i[0]+'/metals_proc/'+res+'MIST/out.hybrid.final','mistres_nosys')
+                maketab(i[1],galdir+'/'+i[0]+'/metals_proc/'+res+'MIST/out.final','mist'+res+'_all')
+                maketab(i[1],galdir+'/'+i[0]+'/metals_proc/'+res+'MIST/out.hybrid.final','mist'+res+'_nosys')
         if mist == "False":
             for i in naml:
-                maketab(i[1],galdir+'/'+i[0]+'/metals_proc/'+res+'/out.final','parsecres_all')
-                maketab(i[1],galdir+'/'+i[0]+'/metals_proc/'+res+'/out.hybrid.final','parsecres_nosys')
+                maketab(i[1],galdir+'/'+i[0]+'/metals_proc/'+res+'/out.final','parsec'+res+'_all')
+                maketab(i[1],galdir+'/'+i[0]+'/metals_proc/'+res+'/out.hybrid.final','parsec'+res+'_nosys')
     
 
 if __name__ == '__main__':
     main()
+
+
+# In[ ]:
+
+
 
