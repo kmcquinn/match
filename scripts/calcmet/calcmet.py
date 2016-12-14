@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[28]:
+# In[38]:
 
 import numpy as np
 from sys import argv as arg
@@ -11,7 +11,7 @@ zsol = 8.69     # Solar z
 fake = 8.0     # Test gas z
 
 
-# In[29]:
+# In[39]:
 
 # Searches for item in a list and returns the index of the item in the list if it is in the list
 def itin(x,pop):
@@ -72,7 +72,7 @@ def hitab(boop):
     hi=Table(rows=ale,names=['gal','loghi','dist'],dtype=['S','f8','f8'])
 
 
-# In[30]:
+# In[40]:
 
 '''
 Calculates the amount of oxygen formed in the galaxy with 3 different nucleosynthesis yields from 
@@ -87,7 +87,7 @@ def cogal(t,u,l):     # t = total star formation
     return [[t*p1,u*p1,l*p1],[t*p2,u*p2,l*p2],[t*p3,u*p3,l*p3]]
 
 
-# In[31]:
+# In[41]:
 
 '''
 Calculates the mass of oxygen in the gas.
@@ -146,7 +146,7 @@ def cogas(nam):     # nam = galaxy name, no 0's before number (ex. UGC8508, not 
     return [gm*16.*10**(z-12.),abs(gm*16.*10**(z-12.)*np.log(10))*zerr]
 
 
-# In[32]:
+# In[42]:
 
 '''
 Calculates the amount of oxygen locked in the stars.
@@ -181,10 +181,11 @@ def costar(r,ru,rl,st,et,z,zerru,zerrl):    # Takes sfr, sfr upper and lower unc
         om.append((1-Rec)*sm[i]*somd[i])
         omerru.append(om[i]*(1-Rec)*((smeru[i]/sm[i])**2.+(somderu[i]/somd[i])**2.)**(1./2.))
         omerrl.append(om[i]*(1-Rec)*((smerl[i]/sm[i])**2.+(somderl[i]/somd[i])**2.)**(1./2.))
-    return [sum(om), sum(omerru), sum(omerrl)]     # Total oxygen mass in stars
+    return [sum(om), (sum([i**2 for i in omerru]))**(1./2.), (sum([i**2 for i in omerru]))**(1./2.)]     # Total oxygen mass 
+                                                                                                         # in stars
 
 
-# In[33]:
+# In[43]:
 
 '''
 Calculates the total oxygen budget.
@@ -195,12 +196,12 @@ def obud(g,s,t):     # Takes oxygen in gas, stars, and total oxygen formed
     errl=[]
     for i in range(len(t)):
         ans.append((g[0]+s[0])/t[i][0])
-        erru.append(((g[1]+s[1])/(g[0]+s[0])+t[i][1]/t[i][0])*ans[i])
-        errl.append(((g[1]+s[2])/(g[0]+s[0])+t[i][2]/t[i][0])*ans[i])
+        erru.append((((g[1]**2+s[1]**2)**(1./2.)/(g[0]+s[0]))**2+(t[i][1]/t[i][0])**2)**(1./2.)*ans[i])
+        errl.append((((g[1]**2+s[1]**2)**(1./2.)/(g[0]+s[0]))**2+(t[i][1]/t[i][0])**2)**(1./2.)*ans[i])
     return ans,erru,errl
 
 
-# In[34]:
+# In[44]:
 
 '''
 Add results to a really ugly file.
@@ -224,15 +225,15 @@ def maketab(nam,filnam,output):
             thi.close()
         else:
             thi=open(output,'w')
-            thi.write('Name\tMRF\t+\t-\tO_gas\t+/-\tO_star\t+\t-\tTot1\t+\t-\tTot2\t+\t-\tTot3\t+\t-')
+            thi.write('Name\tMRF\t+\t-\tStellar Mass\t+\t-\tO_gas\t+/-\tO_star\t+\t-\tTot1\t+\t-\tTot2\t+\t-\tTot3\t+\t-')
             thi.write('\n')
-            thi.write(nam+'\t'+str(d[0][1])+'\t'+str(d[1][1])+'\t'+str(d[2][1])+'\t'+str(a[0])+'\t'+str(a[1])+'\t'+str(b[0])+'\t'+str(b[1])
+            thi.write(nam+'\t'+str(d[0][1])+'\t'+str(d[1][1])+'\t'+str(d[2][1])+str(totsf)+'\t'+str(totsfu)+'\t'+str(totsfl)+'\t'+str(a[0])+'\t'+str(a[1])+'\t'+str(b[0])+'\t'+str(b[1])
                       +'\t'+str(b[2])+'\t'+str(c[0][0])+'\t'+str(c[0][1])+'\t'+str(c[0][2])+'\t'+str(c[1][0])+'\t'
                       +str(c[1][1])+'\t'+str(c[1][2])+'\t'+str(c[2][0])+'\t'+str(c[2][1])+'\t'+str(c[2][2]))
             thi.close()
 
 
-# In[36]:
+# In[45]:
 
 # Proper syntax: python calcmet.py [name of file with data in it]
 
