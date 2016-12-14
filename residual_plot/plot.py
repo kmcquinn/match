@@ -178,9 +178,9 @@ ax_2 = plot_Scatter(fig, lage_arr, sfr_arr, subx2, suby2, subsize, '(e) Star For
 
 ax5 = plot_Scatter(fig, age_arr, sfr_arr, subx3, suby2, subsize, '(f) Star Formation Rate', 'age (Gyr)','SFR','steps', sfr_low, sfr_high)
 
-ax_1 = plot_fill(fig, lage_arr, csf_arr, subx2, suby3, subsize, '(b) Cumulative Star Formation', 'log(age)','SF','solid', csf_low, csf_up)
+ax_1 = plot_fill(fig, lage_arr, csf_arr, subx2, suby3, subsize, '(b) Cumulative Star Formation', 'log(age)','Fraction of Stellar Mass','solid', csf_low, csf_up)
 
-ax_4 = plot_fill(fig, age_arr, csf_arr, subx3, suby3, subsize, '(c) Cumulative Star Formation', 'age (Gyr)', 'SF','solid', csf_low, csf_up)
+ax_4 = plot_fill(fig, age_arr, csf_arr, subx3, suby3, subsize, '(c) Cumulative Star Formation', 'age (Gyr)', 'Fraction of Stellar Mass','solid', csf_low, csf_up)
 
 
 ax_3 = plot_Scatter(fig, lage_arr, met_arr, subx2, suby1, subsize, '(h) Metallicity', 'log(age)','Z','solid', met_low, met_up)
