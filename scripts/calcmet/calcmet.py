@@ -181,7 +181,7 @@ def costar(r,ru,rl,st,et,z,zerru,zerrl):    # Takes sfr, sfr upper and lower unc
         om.append((1-Rec)*sm[i]*somd[i])
         omerru.append(om[i]*(1-Rec)*((smeru[i]/sm[i])**2.+(somderu[i]/somd[i])**2.)**(1./2.))
         omerrl.append(om[i]*(1-Rec)*((smerl[i]/sm[i])**2.+(somderl[i]/somd[i])**2.)**(1./2.))
-    return [sum(om), (sum([i**2 for i in omerru]))**(1./2.), (sum([i**2 for i in omerru]))**(1./2.)]     # Total oxygen mass 
+    return [sum(om), (sum([i**2 for i in omerru]))**(1./2.), (sum([i**2 for i in omerrl]))**(1./2.)]     # Total oxygen mass 
                                                                                                          # in stars
 
 
