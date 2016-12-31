@@ -74,20 +74,40 @@ def plot_HessD(fig, arr, subx1, suby2, subsize, extent, interpolation,
     #cax.xaxis.set_major_formatter(plt.FormatStrFormatter('%.1f'))
     return ax, cax
 
-def plot_Scatter(fig, x, y, subx1, suby2, subsize, title, xlabel, ylabel,linestyle, errlow=[], errhigh=[]):
-    ax = fig.add_axes([subx1, suby2, subsize, subsize])
-    if len(errlow) == 0:
-    	ax.plot(x, y,'k', linestyle = linestyle)
-    else:
-    	ax.errorbar(x, y, yerr=[errlow, errhigh], fmt='k', ecolor='g', elinewidth=0.5)
-    ax.set_title(title, fontsize=8)
-    ax.set_xlabel(xlabel, fontsize=8)
-    ax.set_ylabel(ylabel, fontsize=8)
-    ax.set_xlim(max(x),min(x))
-    ax.set_xticklabels(ax.get_xticks(), size=8)
-    ax.set_yticklabels(ax.get_yticks(), size=8)
-    return ax
+def plot_Scatter(fig, x, y, subx1, suby2, subsize, title, xlabel, ylabel,linestyle, errlow=[], errhigh=[], bound=False):
+	ax = fig.add_axes([subx1, suby2, subsize, subsize])
+	if len(errlow) == 0:
+		ax.plot(x, y,'k', linestyle = linestyle)
+	else:
+		ax.errorbar(x, y, yerr=[errlow, errhigh], fmt='k', capsize=0, ecolor='k', elinewidth=0.7)
+	ax.set_title(title, fontsize=8)
+	ax.set_xlabel(xlabel, fontsize=8)
+	ax.set_ylabel(ylabel, fontsize=8)
+	if bound == True:
+		ax.set_xlim(14.0, min(x))
+	else:
+		ax.set_xlim(max(x),min(x))
+	ax.set_xticklabels(ax.get_xticks(), size=8)
+	ax.set_yticklabels(ax.get_yticks(), size=8)
+	return ax
     
+def plot_Hist(fig, x, y, subx1, suby2, subsize, title, xlabel, ylabel,linestyle, errlow=[], errhigh=[], bound=False):
+	#x: array with all x values
+	#y: array with corrosponding y values
+	ax = fig.add_axes([subx1, suby2, subsize, subsize])
+	ax.step(x, y, color='k')
+	ax.errorbar(x,y,yerr=[errlow,errhigh], fmt='none', capsize=0, ecolor='k', elinewidth=0.7)
+	ax.set_title(title, fontsize=8)
+	ax.set_xlabel(xlabel, fontsize=8)
+	ax.set_ylabel(ylabel, fontsize=8)
+	if bound == True:
+		ax.set_xlim(14.0, min(x))
+	else:
+		ax.set_xlim(max(x),min(x))
+	ax.set_xticklabels(ax.get_xticks(), size=8)
+	ax.set_yticklabels(ax.get_yticks(), size=8)
+	return ax
+
 def plot_fill(fig, x, y, subx1, suby2, subsize, title, xlabel, ylabel,linestyle, errlow=[], errhigh=[]):
     ax = fig.add_axes([subx1, suby2, subsize, subsize])
     ax.plot(x, y,'k', linestyle = linestyle)
@@ -174,17 +194,17 @@ ax_mod, cax_mod = plot_HessD(fig, mod_arr, subx1, suby2, subsize, extent, interp
 
 ax_sig, cax_sig = plot_HessD(fig, sig_arr, subx1, suby1, subsize, extent, interpolation, '(g) Residual Significance', xlabel, ylabel,0)
 
-ax_2 = plot_Scatter(fig, lage_arr, sfr_arr, subx2, suby2, subsize, '(e) Star Formation Rate', 'log(age)','SFR','steps', sfr_low, sfr_high)
+ax_2 = plot_Hist(fig, lage_arr, sfr_arr, subx2, suby2, subsize, '(e) Star Formation Rate', 'log(age)','SFR','steps', sfr_low, sfr_high)
 
-ax5 = plot_Scatter(fig, age_arr, sfr_arr, subx3, suby2, subsize, '(f) Star Formation Rate', 'age (Gyr)','SFR','steps', sfr_low, sfr_high)
+ax5 = plot_Hist(fig, age_arr, sfr_arr, subx3, suby2, subsize, '(f) Star Formation Rate', 'age (Gyr)','SFR','steps', sfr_low, sfr_high, True)
 
 ax_1 = plot_Scatter(fig, lage_arr, csf_arr, subx2, suby3, subsize, '(b) Cumulative Star Formation', 'log(age)','Fraction of Stellar Mass','solid', csf_low, csf_up)
 
-ax_4 = plot_Scatter(fig, age_arr, csf_arr, subx3, suby3, subsize, '(c) Cumulative Star Formation', 'age (Gyr)', 'Fraction of Stellar Mass','solid', csf_low, csf_up)
+ax_4 = plot_Scatter(fig, age_arr, csf_arr, subx3, suby3, subsize, '(c) Cumulative Star Formation', 'age (Gyr)', 'Fraction of Stellar Mass','solid', csf_low, csf_up, True)
 
 
 ax_3 = plot_Scatter(fig, lage_arr, met_arr, subx2, suby1, subsize, '(h) Metallicity', 'log(age)','Z','solid', met_low, met_up)
 
-ax_6 = plot_Scatter(fig, age_arr, met_arr, subx3, suby1, subsize, '(i) Metallicity', 'age (Gyr)', 'Z','solid', met_low, met_up)
+ax_6 = plot_Scatter(fig, age_arr, met_arr, subx3, suby1, subsize, '(i) Metallicity', 'age (Gyr)', 'Z','solid', met_low, met_up, True)
 
 fig.savefig(plot_name, dpi=300, bbox_inches='tight')
