@@ -94,9 +94,18 @@ def plot_Scatter(fig, x, y, subx1, suby2, subsize, title, xlabel, ylabel,linesty
 def plot_Hist(fig, x, y, subx1, suby2, subsize, title, xlabel, ylabel,linestyle, errlow=[], errhigh=[], bound=False):
 	#x: array with all x values
 	#y: array with corrosponding y values
+	#modify x array to center errorbars
+	errx = []
+	for i in range(0,len(x)):
+		if i == len(x) - 1:
+			gap = x[i - 1] - x[i - 2]
+			errx.append(x[i] + gap/2.0)
+		else:
+			gap = x[i + 1] - x[i]
+			errx.append(x[i] + gap/2.0)
 	ax = fig.add_axes([subx1, suby2, subsize, subsize])
 	ax.step(x, y, color='k')
-	ax.errorbar(x,y,yerr=[errlow,errhigh], fmt='none', capsize=0, ecolor='k', elinewidth=0.7)
+	ax.errorbar(errx,y,yerr=[errlow,errhigh], fmt='none', capsize=0, ecolor='k', elinewidth=0.7)
 	ax.set_title(title, fontsize=8)
 	ax.set_xlabel(xlabel, fontsize=8)
 	ax.set_ylabel(ylabel, fontsize=8)
