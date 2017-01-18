@@ -712,8 +712,9 @@ def main():
 					GalDir = info[1]
 					GalFlux = float(info[2])
 					GalDist = float(info[3])
-					if len(info) > 4:
-						bestDepth = info[4:8]
+					GalComp = float(info[4])
+					if len(info) > 5:
+						bestDepth = info[5:9]
 						bestDepth = [float(i) for i in bestDepth]
 						runFit = 0
 					break
@@ -729,12 +730,17 @@ def main():
 		bestDepth = calcFit(basedir, scriptr, Fstart, Zinc)
 	#print(bestDepth)
 	#now we can run the full calcsfh script for each timebin
+	#define folder names used based on zinc, library
+	baseCalc = basedir+tibin
+	baseFake = basedir+"fakes"
+	if Zinc == True:
+		baseCalc = baseCalc + "_zinc"
+		baseFake = baseFake + "_zinc"
 	if mist == True:
-		calcfolder = basedir+tibin+"MIST"+"/"
-		fakefolder = basedir+"fakesMIST/"
-	else:
-		calcfolder = basedir+tibin+"/"
-		fakefolder = basedir+"fakes/"
+		baseCalc = baseCalc + "_mist"
+		baseFake = baseFake + "_mist"
+	baseCalc = baseCalc + "/"
+	baseFake = baseFake + "/"
 	fullCalc(scriptr, calcfolder, bestDepth, tibin, Zinc, mist)
 	#fullFake(basedir, scriptr, fakefolder, [GalFlux,GalDist], bestDepth, Zinc, mist)
 	
