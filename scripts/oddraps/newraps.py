@@ -13,6 +13,7 @@ import multiprocessing as mp
 import os
 import numpy as np
 
+#python newraps.py GalFolder -zinc=True/False -time=full/no/v1/v2 -lib=PARSEC/MIST/PADUA -pars=ParsLoc -phot=PhotLoc -fake=FakeLoc -fit=True/False -calc=True/False -ml=True/False
 
 def findParams():
 	args = sys.argv
@@ -748,7 +749,7 @@ def main():
 	#look up galaxy info
 	params = findGal(params)
 	#set up pars files and dir structure
-	basedir = "/work/04316/kmcquinn/wrangler/metals/galaxies/"+GalDir+"/"+GalName+"/metals_proc/"
+	basedir = "/work/04316/kmcquinn/wrangler/metals/galaxies/"+params['dir']+"/"+params["gal"]+"/metals_proc/"
 	scriptr = basedir + "scriptdir/"
 	setFolder(basedir, params)
 	Fstart = editFiles(scriptr)
