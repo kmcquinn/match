@@ -496,7 +496,7 @@ def findOut(galdir):
 			return galdir+cull[this]+"/out.final"
 		except:
 			continue
-def fullFake(galdir, basis, pwd, galvals, goodfilt, zinc, mist):
+def fullFake(galdir, basis, params):
 	#finds filter values that max. total lum. in output file. Uses this to find M/L ratio of galaxy
 	
 	#dumb paramater naming here
