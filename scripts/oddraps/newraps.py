@@ -13,7 +13,7 @@ import multiprocessing as mp
 import os
 import numpy as np
 
-#python newraps.py GalFolder -zinc=True/False -time=full/no/v1/v2 -lib=PARSEC/MIST/PADUA -pars=ParsLoc -phot=PhotLoc -fake=FakeLoc -fit=True/False -calc=True/False -ml=True/False
+#python newraps.py GalFolder -zinc=True/False -time=full/no/v1/v2 -lib=PARSEC/MIST/PADUA -pars=ParsLoc -phot=PhotLoc -fake=FakeLoc -fit=True/False -calc=True/False -ml=True/False 
 
 def findParams():
 	args = sys.argv
@@ -79,7 +79,13 @@ def findParams():
 			if (check == 'yes') or (check == 'true'):
 				sets['ml'] = True
 			else:
-				sets['ml'] = False	
+				sets['ml'] = False
+		if i.startswith("-data") == True:
+			check = i[6:]
+			if check[-1] != '/':
+				check += '/'
+			print("data path is "+check)
+			sets['data'] = check	
 	return sets			
 
 def findGal(params):
@@ -516,6 +522,11 @@ def fullFake(galdir, basis, params):
 	zinc = params['zinc']
 	lib = params['lib']
 	
+	
+	fold = params['data']+params['gal']+"_store/"
+	comm = "mkdir "+fold
+	sp.call(comm.split())
+	
 	sp.call(["mkdir",pwd])
 	makePars(galdir, pwd+"CparsBasis", goodfilt, "sfh_fullres", zinc)
 	
@@ -571,7 +582,7 @@ def fullFake(galdir, basis, params):
 	with open(pwd+"footer", 'r') as fobj:
 		for line in fobj:
 			t.write(line)
-	comm1 = 'fake '+pwd+'parstest '+pwd+'outtest -full -KROUPA '
+	comm1 = 'fake '+pwd+'parstest '+fold+'outtest -full -KROUPA '
 	if lib == "PADUA":
 		comm2 = ""
 	else:
@@ -579,7 +590,7 @@ def fullFake(galdir, basis, params):
 	comm = comm1 + comm2
 	sp.call(comm.split())
 	sold = []
-	sold.append(calclum(pwd+"outtest", galdist))
+	sold.append(calclum(fold+"outtest", galdist))
 	sold = sold + goodfilt	#list has starting lum and starting filter values
 	
 	#here is where we actually find the best filter values
@@ -605,7 +616,7 @@ def fullFake(galdir, basis, params):
 			totest[3] = 34.0
 			permlist.append(totest)
 			makeFakePars(pwd, 'TEST'+strflail, totest)	#make pars file with 'test' to indicate temp file
-			comm1 = 'fake '+pwd+'fakepars'+'TEST'+strflail+' '+pwd+'out'+'TEST'+strflail+' -full -KROUPA '
+			comm1 = 'fake '+pwd+'fakepars'+'TEST'+strflail+' '+fold+'out'+'TEST'+strflail+' -full -KROUPA '
 			if lib == "PADUA":
 				comm2 = ""
 			else:
@@ -619,7 +630,7 @@ def fullFake(galdir, basis, params):
 		pool.join()	
 		for i in range(0, flail):
 			strflail = '%03d' % (i,)
-			lum = calclum(pwd+'outTEST'+strflail, galdist)
+			lum = calclum(fold+'outTEST'+strflail, galdist)
 			rfilt = permlist[i][1]
 			xdepth.append(rfilt)
 			ydepth.append(lum)
@@ -631,7 +642,7 @@ def fullFake(galdir, basis, params):
 			sold[1:] = permlist[maxloc]		#new stored filter values
 			valstr = '%03d' % (maxloc,)		#store best run number as string for out files
 			copyfile(pwd+'fakeparsTEST'+valstr, pwd+'fakepars'+runstr)	#copy temp pars of best run to new file
-			copyfile(pwd+'outTEST'+valstr, pwd+'out'+runstr)				#copy temp out of best run to new file
+			copyfile(fold+'outTEST'+valstr, pwd+'out'+runstr)				#copy temp out of best run to new file
 			runnum = runnum + 1
 		else:
 			print('Best run found at index '+str(runnum - 1))			
