@@ -16,6 +16,7 @@ import numpy as np
 #python newraps.py GalFolder -zinc=True/False -time=full/no/v1/v2 -lib=PARSEC/MIST/PADUA -pars=ParsLoc -phot=PhotLoc -fake=FakeLoc -fit=True/False -calc=True/False -ml=True/False 
 
 def findParams():
+	#creates dict of parameters based on input command
 	args = sys.argv
 	sets = {}
 	#set gal folder
@@ -205,7 +206,6 @@ def editFiles(sir):
 		p.write(g.readline())	#must read another line to catch up with the first case
 	
 	#here we have the number of timebins and timebins left in pars
-	#the plan is to leave this pars file as is, and construct the rest of it with the timebin files based on the calcsfh run it's used for
 	p.close()
 	g.close()
 	return [float(i) for i in startblue] + [float(i) for i in startred]	#returns startblue and startred as one list of float entries
@@ -270,6 +270,8 @@ def grabDepths(outpath):
 	#returns four filter depth values
 
 def doWork(putin):
+	#dummy function that allows for parallizing filter depth runs
+	#stores and returns fit value from stdout
 	flail, commdict = putin
 	comm = commdict[flail][2]
 	p = sp.Popen(comm.split(), stdout=sp.PIPE)
@@ -376,12 +378,14 @@ def calcFit(bir, scr, filtStart, zinc):
 	return commdict[minloc][1]
 	
 def Calcwork(arr):
+	#dummy function for paralelizing calcsfh analysis
 	comm, output = arr[0], arr[1]
 	f = open(output, "wb")	
 	sp.call(comm.split(),stdout=f)
 	f.close()
 	return 0
 def fullCalc(bpath, params):
+	#runs calcsfh analysis with MC and systematics?
 	'''
 	bpath -> /scriptdir/
 	fullpath -> /sfh_fullres/
@@ -487,10 +491,12 @@ def fullCalc(bpath, params):
 
 
 def Fakework(comm):
+	#dummy function for parallelizing fake analysis
 	sp.call(comm.split())
 	return 0
 	
 def findOut(galdir):
+	#determines what out.final file to use for fake analysis
 	inList = sp.check_output(["ls",galdir]).splitlines()
 	for i in range(0,len(inList)):
 		inList[i] = inList[i].decode("ASCII")
@@ -712,6 +718,7 @@ def BestPlot(pwd, outname):
 	plt.close()
 	
 def PlotCurve(pwd, xdepth, ydepth):
+	#plots curve of growth for total lum as fake filter depths increase
 	plt.scatter(xdepth, ydepth, s=0.2)
 	plt.xlabel('Blue Filter Depth')
 	plt.ylabel('Total Luminosity')
@@ -757,7 +764,7 @@ def calclum(path_to_fakeout, galdist):
 def main():
 	#read sys.argv to determine parameters of run
 	params = findParams()
-	#look up galaxy info
+	#look up galaxy info (distance, flux, etc.)
 	params = findGal(params)
 	#set up pars files and dir structure
 	basedir = "/work/04316/kmcquinn/wrangler/metals/galaxies/"+params['dir']+"/"+params["gal"]+"/metals_proc/"
