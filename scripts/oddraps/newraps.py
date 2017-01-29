@@ -501,7 +501,7 @@ def findOut(galdir):
 	for i in range(0,len(inList)):
 		inList[i] = inList[i].decode("ASCII")
 	cull = fnmatch.filter(inList,"sfh_fullres*")
-	tries = ['_zinc_mist','_zinc_parsec', '_zinc', '_mist', '_parsec', '']
+	tries = ['_zinc_MIST','_zinc_PARSEC', '_zinc', '_MIST', '_PARSEC', '']
 	for i in tries:
 		try:
 			this = cull.index("sfh_fullres"+i)
