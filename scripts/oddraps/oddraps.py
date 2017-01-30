@@ -12,34 +12,120 @@ import fnmatch
 import multiprocessing as mp
 import os
 import numpy as np
-'''
-HOW TO RUN ODDRAPS:
-1.) Place lastest version in same folder as GalCatalog, sfh_full res file, teffdata file
-2.) Edit sample batch script
-	command: "python oddraps.py NAMEofGALAXYfolder -zinc=True/False"
-	use your email, set time at ~48h
-	may want to split calcFit and FullCalc into two separate jobs
-		this is easily done by commenting out the functions you dont want for each script submission
-	change job name, console output name accordingly
-3.) Run by calling "sbatch SAMPLEscript"
 
-Upon completion:
-	/GALfolder/metals_proc/scriptdir/calctests has all cmds, ps files
-	FiltResults file gives output name, filter depths, fit value
-	/sfh_*timebin*/ folders have all fullCalc results.
-		may need to run command to generate out.ps
+#python newraps.py GalFolder -zinc=True/False -time=full/no/v1/v2 -lib=PARSEC/MIST/PADUA -pars=ParsLoc -phot=PhotLoc -fake=FakeLoc -fit=True/False -calc=True/False -ml=True/False 
 
-oddraps = on dwarf disks, running a python script
-'''
-def setFolder(bir, phot, fake, pars):
-	'''
-	hey, this guy is taking the first file it sees that fits those wildcards
-	that means if there is more than one match, any of those files is fair game for it to pull
-	sorry
-	'''
-	#this creates a directory in the work folder and moves the given files (pars,phot,fake) over for safety
+def findParams():
+	#creates dict of parameters based on input command
+	args = sys.argv
+	sets = {}
+	#set gal folder
+	sets['gal'] = args[1]
+	#set default values
+	sets['zinc'] = False
+	sets['time'] = 'sfh_fullres'
+	sets['lib'] = 'PARSEC'
+	sets['phot'] = None
+	sets['fake'] = None
+	sets['pars'] = None
+	sets['fit'] = True
+	sets['calc'] = True
+	sets['ml'] = True
+	#set custom values
+	for i in args:
+		if i.startswith("-zinc") == True:
+			check = i[6:].lower()
+			if (check == "yes") or (check == "true"):
+				sets['zinc'] = True
+			else:
+				sets['zinc'] = False
+		if i.startswith("-time") == True:
+			check = i[6:].lower()
+			if check == "no":
+				sets['time'] = 'sfh_no_res'
+			elif check == "v1":
+				sets['time'] = 'sfh_starburst_v1res'
+			elif check == "v2":
+				sets['time'] = 'sfh_starburst_v2res'
+			else:
+				sets['time'] = 'sfh_fullres'
+		if i.startswith("-lib") == True:
+			check = i[5:].lower()
+			if check == "parsec":
+				sets['lib'] = 'PARSEC'
+			elif check == "mist":
+				sets['lib'] = 'MIST'
+			else:
+				sets['lib'] = "PADOVA"
+		if i.startswith("-pars") == True:
+			sets['pars'] = i[6:]
+		if i.startswith("-phot") == True:
+			sets['phot'] = i[6:]
+		if i.startswith("-fake") == True:
+			sets['fake'] = i[6:]
+		if i.startswith("-fit") == True:
+			check = i[5:].lower()
+			if (check == 'yes') or (check == 'true'):
+				sets['fit'] = True
+			else:
+				sets['fit'] = False
+		if i.startswith("-calc") == True:
+			check = i[6:].lower()
+			if (check == 'yes') or (check == 'true'):
+				sets['calc'] = True
+			else:
+				sets['calc'] = False
+		if i.startswith("-ml") == True:
+			check = i[4:].lower()
+			if (check == 'yes') or (check == 'true'):
+				sets['ml'] = True
+			else:
+				sets['ml'] = False
+		if i.startswith("-data") == True:
+			check = i[6:]
+			if check[-1] != '/':
+				check += '/'
+			print("data path is "+check)
+			sets['data'] = check	
+	return sets			
+
+def findGal(params):
+	#use galcatalog to find needed info on gal
+	with open('GalCatalog','r') as fobj:
+			for line in fobj:
+				info = line.split()
+				if info[0] == params['gal']:
+					params['dir'] = info[1]
+					params['flux'] = float(info[2])
+					params['dist'] = float(info[3])
+					params['comp'] = float(info[4])
+					if len(info) > 5:
+						bestDepth = info[5:9]
+						params['depths'] = [float(i) for i in bestDepth]
+					break
+	return params
+
+def nameDirs(basedir, params):
+	#name dirs used for fullCalc, fullFake based on params
+	baseCalc = basedir+params['time']
+	baseFake = basedir+"fakes"
+	if params['zinc'] == True:
+		baseCalc = baseCalc + "_zinc"
+		baseFake = baseFake + "_zinc"
+	baseCalc = baseCalc + "_" + params['lib']
+	baseFake = baseFake + "_" + params['lib']
+	baseCalc = baseCalc + "/"
+	baseFake = baseFake + "/"
+	params['baseCalc'] = baseCalc
+	params['baseFake'] = baseFake
+	return params
+	
+def setFolder(bir, params):
 	#first setup folder in gal dir to build files
 	sp.call(["mkdir",bir+"scriptdir/"])
+	pars = params['pars']
+	fake = params['fake']
+	phot = params['phot']
 	#find pars file in input_data folder
 	if pars == None:
 		fold = bir+"../conf_new_dol/"
@@ -51,7 +137,6 @@ def setFolder(bir, phot, fake, pars):
 	
 	fold = bir+"../proc_new_dol/"
 	inList = sp.check_output(["ls",fold]).splitlines()
-	
 	if phot == None:
 		exten = "*.gst.match"
 		cull = fnmatch.filter(inList,exten)
@@ -63,7 +148,6 @@ def setFolder(bir, phot, fake, pars):
 		copyfile(fold+cull[0], bir+"scriptdir/fake")
 	else:
 		copyfile(fake, bir+"scriptdir/fake")
-	#ok so all the files we need are in our new directory, and we grabbed the filter names from the filenames to compare with the given pars file. 
 
 def editFiles(sir):
 	#now we need to make any needed changes to the pars file before using them in calcsfh
@@ -122,7 +206,6 @@ def editFiles(sir):
 		p.write(g.readline())	#must read another line to catch up with the first case
 	
 	#here we have the number of timebins and timebins left in pars
-	#the plan is to leave this pars file as is, and construct the rest of it with the timebin files based on the calcsfh run it's used for
 	p.close()
 	g.close()
 	return [float(i) for i in startblue] + [float(i) for i in startred]	#returns startblue and startred as one list of float entries
@@ -187,6 +270,8 @@ def grabDepths(outpath):
 	#returns four filter depth values
 
 def doWork(putin):
+	#dummy function that allows for parallizing filter depth runs
+	#stores and returns fit value from stdout
 	flail, commdict = putin
 	comm = commdict[flail][2]
 	p = sp.Popen(comm.split(), stdout=sp.PIPE)
@@ -293,16 +378,23 @@ def calcFit(bir, scr, filtStart, zinc):
 	return commdict[minloc][1]
 	
 def Calcwork(arr):
+	#dummy function for paralelizing calcsfh analysis
 	comm, output = arr[0], arr[1]
 	f = open(output, "wb")	
 	sp.call(comm.split(),stdout=f)
 	f.close()
 	return 0
-def fullCalc(bpath, fullpath, goodDepths, tbins, zinc, mist):
+def fullCalc(bpath, params):
+	#runs calcsfh analysis with MC and systematics?
 	'''
 	bpath -> /scriptdir/
 	fullpath -> /sfh_fullres/
 	'''
+	fullpath = params['baseCalc']
+	goodDepths = params['depths']
+	tbins = params['time']
+	zinc = params['zinc']
+	lib = params['lib']
 	comm = "mkdir "+fullpath
 	sp.call(comm.split())
 	#runs the full calcsfh workflow, incudes hybridMC, .ps plot of results
@@ -333,14 +425,15 @@ def fullCalc(bpath, fullpath, goodDepths, tbins, zinc, mist):
 	lgsig, mbol = vals[minloc][0], vals[minloc][1]
 	#run calcsfh once for use with hybridMC
 	comm1 = "calcsfh "+fullpath+"pars "+photLoc+" "+fakeLoc+" "+fullpath+"out -Kroupa "
-	if mist == True:
-		comm2 = "-MIST "
+	if (lib == "MIST") or (lib == "PARSEC"):
+		comm2 = "-"+lib+" "
 	else:
-		comm2 = "-PARSEC "
+		comm2 = ""
 	comm3 = "-mcdata"
-	comm4 = ""
 	if zinc == True:
 		comm4 = " -zinc"
+	else:
+		comm4 = ""
 	comm = comm1 + comm2 + comm3 + comm4
 	f = open(fullpath+"console.txt", "wb")	
 	sp.call(comm.split(),stdout=f)
@@ -353,10 +446,10 @@ def fullCalc(bpath, fullpath, goodDepths, tbins, zinc, mist):
 	
 	part1 = "calcsfh "+fullpath+"pars "+photLoc+" "+fakeLoc+" "+fullpath+"out_"
 	part2 = " -Kroupa "
-	if mist == True:
-		part3 = "-MIST "
+	if (lib == "MIST") or (lib == "PARSEC"):
+		part3 = "-"+lib+" "
 	else:
-		part3 = "-PARSEC "
+		part3 = ""
 	if zinc == True:
 		part4 = "-zinc -mcdata -mcseed="
 	else:
@@ -398,9 +491,24 @@ def fullCalc(bpath, fullpath, goodDepths, tbins, zinc, mist):
 
 
 def Fakework(comm):
+	#dummy function for parallelizing fake analysis
 	sp.call(comm.split())
 	return 0
-def fullFake(galdir, basis, pwd, galvals, goodfilt, zinc, mist):
+	
+def findOut(galdir):
+	#determines what out.final file to use for fake analysis
+	inList = sp.check_output(["ls",galdir]).splitlines()
+	for i in range(0,len(inList)):
+		inList[i] = inList[i].decode("ASCII")
+	cull = fnmatch.filter(inList,"sfh_fullres*")
+	tries = ['_zinc_MIST','_zinc_PARSEC', '_zinc', '_MIST', '_PARSEC', '']
+	for i in tries:
+		try:
+			this = cull.index("sfh_fullres"+i)
+			return galdir+cull[this]+"/out.final"
+		except:
+			continue
+def fullFake(galdir, basis, params):
 	#finds filter values that max. total lum. in output file. Uses this to find M/L ratio of galaxy
 	
 	#dumb paramater naming here
@@ -413,8 +521,17 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt, zinc, mist):
 	#pars file split into three parts: header, filters, and footer
 	#will first build these files to easily swap in new filter values as needed
 	#first generate calcsfh pars file needed to create fake pars file
-	galflux, galdist = galvals
+	pwd = params['baseFake']
+	galflux = params['flux']
+	galdist = params['dist']
+	goodfilt = params['depths']
+	zinc = params['zinc']
+	lib = params['lib']
 	
+	
+	fold = params['data']+params['gal']+"_store/"
+	comm = "mkdir "+fold
+	sp.call(comm.split())
 	
 	sp.call(["mkdir",pwd])
 	makePars(galdir, pwd+"CparsBasis", goodfilt, "sfh_fullres", zinc)
@@ -440,10 +557,8 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt, zinc, mist):
 	f.close()
 	
 	#open out.final from sfh_fullres, needed for sfr z values
-	try:
-		h = open(galdir+"sfh_fullresMIST/out.final","r")	
-	except:
-		h = open(galdir+"sfh_fullres/out.final","r")
+	goodfin = findOut(galdir)
+	h = open(goodfin, "r")
 	galmass = float(h.readline().split()[1])	#store gal mass for later, also sets file up to start reading timebins
 	j = open("sfh_fullres", 'r') 	#open timebin file for # of timebins
 	tbins = int(j.readline().split()[0])	#record number of timebins
@@ -473,15 +588,15 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt, zinc, mist):
 	with open(pwd+"footer", 'r') as fobj:
 		for line in fobj:
 			t.write(line)
-	comm1 = 'fake '+pwd+'parstest '+pwd+'outtest -full -KROUPA '
-	if mist == True:
-		comm2 = "-MIST"
+	comm1 = 'fake '+pwd+'parstest '+fold+'outtest -full -KROUPA '
+	if lib == "PADUA":
+		comm2 = ""
 	else:
-		comm2 = "-PARSEC"
+		comm2 = "-"+lib
 	comm = comm1 + comm2
 	sp.call(comm.split())
 	sold = []
-	sold.append(calclum(pwd+"outtest", galdist))
+	sold.append(calclum(fold+"outtest", galdist))
 	sold = sold + goodfilt	#list has starting lum and starting filter values
 	
 	#here is where we actually find the best filter values
@@ -507,11 +622,11 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt, zinc, mist):
 			totest[3] = 34.0
 			permlist.append(totest)
 			makeFakePars(pwd, 'TEST'+strflail, totest)	#make pars file with 'test' to indicate temp file
-			comm1 = 'fake '+pwd+'fakepars'+'TEST'+strflail+' '+pwd+'out'+'TEST'+strflail+' -full -KROUPA '
-			if mist == True:
-				comm2 = "-MIST"
+			comm1 = 'fake '+pwd+'fakepars'+'TEST'+strflail+' '+fold+'out'+'TEST'+strflail+' -full -KROUPA '
+			if lib == "PADUA":
+				comm2 = ""
 			else:
-				comm2 = "-PARSEC"
+				comm2 = "-"+lib
 			comm = comm1 + comm2
 			commlist.append(comm)
 			flail = flail + 1
@@ -521,7 +636,7 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt, zinc, mist):
 		pool.join()	
 		for i in range(0, flail):
 			strflail = '%03d' % (i,)
-			lum = calclum(pwd+'outTEST'+strflail, galdist)
+			lum = calclum(fold+'outTEST'+strflail, galdist)
 			rfilt = permlist[i][1]
 			xdepth.append(rfilt)
 			ydepth.append(lum)
@@ -533,7 +648,7 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt, zinc, mist):
 			sold[1:] = permlist[maxloc]		#new stored filter values
 			valstr = '%03d' % (maxloc,)		#store best run number as string for out files
 			copyfile(pwd+'fakeparsTEST'+valstr, pwd+'fakepars'+runstr)	#copy temp pars of best run to new file
-			copyfile(pwd+'outTEST'+valstr, pwd+'out'+runstr)				#copy temp out of best run to new file
+			copyfile(fold+'outTEST'+valstr, pwd+'out'+runstr)				#copy temp out of best run to new file
 			runnum = runnum + 1
 		else:
 			print('Best run found at index '+str(runnum - 1))			
@@ -541,6 +656,7 @@ def fullFake(galdir, basis, pwd, galvals, goodfilt, zinc, mist):
 	
 	#produce CMD of best run
 	g = open(pwd+"results","a")
+	g.write("out.final taken from "+goodfin)
 	PlotCurve(pwd,xdepth,ydepth)
 	BestPlot(pwd, "out"+'%03d' % (runnum - 1,))
 	g.write("CMD of best run created at out"+'%03d' % (runnum - 1,)+"\n")
@@ -602,6 +718,7 @@ def BestPlot(pwd, outname):
 	plt.close()
 	
 def PlotCurve(pwd, xdepth, ydepth):
+	#plots curve of growth for total lum as fake filter depths increase
 	plt.scatter(xdepth, ydepth, s=0.2)
 	plt.xlabel('Blue Filter Depth')
 	plt.ylabel('Total Luminosity')
@@ -644,105 +761,24 @@ def calclum(path_to_fakeout, galdist):
 	print(tlum)
 	return tlum
 
-
 def main():
-	'''
-	Your galaxy run needs to change:
-	1.) GalName to the folder name of your galaxy
-	2.) basedir: change if you happen to be in the /oddraps/ folder in a different directory that what I assume.
-		-Change so current directory connects to metals_proc for your gal as shown
-	3.) Comment out or add what functions needed for your analysis
-		-setFolder: creates folder for our use, moves given phot, fake, pars files. Returns filter names given in phot file name
-		-editFiles: edits given pars file to work with current calcsfh version. overwrites filter names in pars file if different to file name. Returns filter depths found in given pars file
-		-calcFit: Generates a bunch of different calcsfh runs with different filter depths centered around those given. Produces FiltResults file to connect output files with filter and fit values. Also finds the run with the lowest fit value. Returns the filter values that produced the lowest fit
-		-fullCalc: MC runs for given filter depths and timebin. Also combines and produces all needed .ps outputs
-		-fullFake: Finds IRAC filter depths that produce highest "fake" luminosity for galaxy. Compares with known magnitude of gal, produces M/L ratio
-	    You will need setFolder and editFiles the first time on a given galaxy in order to run any other functions
-	    Information from each function is not ingelligently stored (ie saved in reference file to save time on repeat runs). I'll add this once everything works.
-	'''
-	#python oddraps.py GalFolder -zinc=True/False -time=full/no/v1/v2 -phot=PhotPath -fake=FakePath -pars=ParsPath -mist=True/False
-	#pars for fullCalc: fullCalc(scriptr, basedir+tibin+"/", bestDepth, tibin=", Zinc, Mist)
-	'''
-	adding mist to oddraps:
-		2. Change fullCalc/fullFake to change comm's based on zinc flag
-	'''
-	Zinc = False
-	tibin = "sfh_fullres"
-	phot = None
-	fake = None
-	pars = None
-	mist = False
-	for i in range(1,len(sys.argv)):
-		if i == 1:
-			GalName = sys.argv[i]
-		if sys.argv[i][1:5] == "zinc":
-			Zinc = sys.argv[i][6:]
-			if Zinc == "True":
-				Zinc = True
-			else:
-				Zinc = False
-		if sys.argv[i][1:5] == "time":
-			tibin = sys.argv[i][6:]	#form: -time=full/no/v1/v2
-			if tibin == "full":
-				tibin = "sfh_fullres"
-			elif tibin == "no":
-				tibin = "sfh_no_res"
-			elif tibin == "v1":
-				tibin = "sfh_starburst_v1res"
-			elif tibin == "v2":
-				tibin = "sfh_starburst_v2res"
-		if sys.argv[i][1:5] == "phot":
-			phot = sys.argv[i][6:]
-		if sys.argv[i][1:5] == "fake":
-			fake = sys.argv[i][6:]
-		if sys.argv[i][1:5] == "pars":
-			pars = sys.argv[i][6:]
-		if sys.argv[i][1:5] == "mist":
-			mist = sys.argv[i][6:]
-			if mist == "True":
-				mist = True
-			else:
-				mist = False
-	#find all cataloged infomation based on galaxy
-	runFit = 1
-	with open('GalCatalog','r') as fobj:
-			for line in fobj:
-				info = line.split()
-				if info[0] == GalName:
-					GalDir = info[1]
-					GalFlux = float(info[2])
-					GalDist = float(info[3])
-					GalComp = float(info[4])
-					if len(info) > 5:
-						bestDepth = info[5:9]
-						bestDepth = [float(i) for i in bestDepth]
-						runFit = 0
-					break
-	basedir = "/work/04316/kmcquinn/wrangler/metals/galaxies/"+GalDir+"/"+GalName+"/metals_proc/"
+	#read sys.argv to determine parameters of run
+	params = findParams()
+	#look up galaxy info (distance, flux, etc.)
+	params = findGal(params)
+	#set up pars files and dir structure
+	basedir = "/work/04316/kmcquinn/wrangler/metals/galaxies/"+params['dir']+"/"+params["gal"]+"/metals_proc/"
 	scriptr = basedir + "scriptdir/"
-	setFolder(basedir, phot, fake, pars)	#create work folder inside gal dir, move given files into it, send back filters used in file names
-	#now we need to make any needed changes to these given files before using them in calcsfh
+	setFolder(basedir, params)
 	Fstart = editFiles(scriptr)
-	#print(Fstart)
-	#now run calcsfh with different filter values to find best depths
-	#from here on out, we are running match commands and will need to use sbatch to run efficently
-	if runFit == 1:
-		bestDepth = calcFit(basedir, scriptr, Fstart, Zinc)
-	#print(bestDepth)
-	#now we can run the full calcsfh script for each timebin
-	#define folder names used based on zinc, library
-	baseCalc = basedir+tibin
-	baseFake = basedir+"fakes"
-	if Zinc == True:
-		baseCalc = baseCalc + "_zinc"
-		baseFake = baseFake + "_zinc"
-	if mist == True:
-		baseCalc = baseCalc + "_mist"
-		baseFake = baseFake + "_mist"
-	baseCalc = baseCalc + "/"
-	baseFake = baseFake + "/"
-	fullCalc(scriptr, calcfolder, bestDepth, tibin, Zinc, mist)
-	#fullFake(basedir, scriptr, fakefolder, [GalFlux,GalDist], bestDepth, Zinc, mist)
+	#run components of oddraps if flagged
+	if params['fit'] == True:
+		params['depths'] = calcFit(basedir, scriptr, Fstart, params['zinc'])
+	params = nameDirs(basedir, params)
+	if params['calc'] == True:
+		fullCalc(scriptr, params)
+	if params['ml'] == True:
+		fullFake(basedir, scriptr, params)
 	
 if __name__ == "__main__":
     main()
