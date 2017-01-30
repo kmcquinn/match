@@ -13,7 +13,7 @@ import multiprocessing as mp
 import os
 import numpy as np
 
-#python newraps.py GalFolder -zinc=True/False -time=full/no/v1/v2 -lib=PARSEC/MIST/PADUA -pars=ParsLoc -phot=PhotLoc -fake=FakeLoc -fit=True/False -calc=True/False -ml=True/False 
+#python newraps.py GalFolder -zinc=True/False -time=full/no/v1/v2 -lib=PARSEC/MIST/PADUA -pars=ParsLoc -phot=PhotLoc -fake=FakeLoc -fit=True/False -calc=True/False -ml=True/False -data=DataLoc
 
 def findParams():
 	#creates dict of parameters based on input command
