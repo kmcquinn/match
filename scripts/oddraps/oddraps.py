@@ -13,7 +13,7 @@ import multiprocessing as mp
 import os
 import numpy as np
 
-#python newraps.py GalFolder -zinc=True/False -time=full/no/v1/v2 -lib=PARSEC/MIST/PADUA -pars=ParsLoc -phot=PhotLoc -fake=FakeLoc -fit=True/False -calc=True/False -ml=True/False -data=DataLoc
+#python newraps.py GalFolder -zinc=True/False -time=full/no/v1/v2 -lib=PARSEC/MIST/PADOVA -pars=ParsLoc -phot=PhotLoc -fake=FakeLoc -fit=True/False -calc=True/False -ml=True/False -data=DataLoc
 
 def findParams():
 	#creates dict of parameters based on input command
@@ -589,7 +589,7 @@ def fullFake(galdir, basis, params):
 		for line in fobj:
 			t.write(line)
 	comm1 = 'fake '+pwd+'parstest '+fold+'outtest -full -KROUPA '
-	if lib == "PADUA":
+	if lib == "PADOVA":
 		comm2 = ""
 	else:
 		comm2 = "-"+lib
@@ -623,7 +623,7 @@ def fullFake(galdir, basis, params):
 			permlist.append(totest)
 			makeFakePars(pwd, 'TEST'+strflail, totest)	#make pars file with 'test' to indicate temp file
 			comm1 = 'fake '+pwd+'fakepars'+'TEST'+strflail+' '+fold+'out'+'TEST'+strflail+' -full -KROUPA '
-			if lib == "PADUA":
+			if lib == "PADOVA":
 				comm2 = ""
 			else:
 				comm2 = "-"+lib
