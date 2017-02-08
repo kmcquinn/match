@@ -505,6 +505,10 @@ def findOut(galdir):
 	for i in tries:
 		try:
 			this = cull.index("sfh_fullres"+i)
+			h = open(galdir+cull[this]+"/out.final", "r")
+			galmass = float(h.readline().split()[1])
+			h.close()
+			print("using out.final from : "+galdir+cull[this]+"/out.final")
 			return galdir+cull[this]+"/out.final"
 		except:
 			continue
