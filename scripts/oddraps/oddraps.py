@@ -495,23 +495,36 @@ def Fakework(comm):
 	sp.call(comm.split())
 	return 0
 	
-def findOut(galdir):
-	#determines what out.final file to use for fake analysis
-	inList = sp.check_output(["ls",galdir]).splitlines()
-	for i in range(0,len(inList)):
-		inList[i] = inList[i].decode("ASCII")
-	cull = fnmatch.filter(inList,"sfh_fullres*")
-	tries = ['_zinc_MIST','_zinc_PARSEC', '_zinc', '_MIST', '_PARSEC', '']
-	for i in tries:
-		try:
-			this = cull.index("sfh_fullres"+i)
-			h = open(galdir+cull[this]+"/out.final", "r")
-			galmass = float(h.readline().split()[1])
-			h.close()
-			print("using out.final from : "+galdir+cull[this]+"/out.final")
-			return galdir+cull[this]+"/out.final"
-		except:
-			continue
+def findOut(galdir, params):
+	#check if out.final from lib flag exists
+	try:
+		part = galdir+"sfh_fullres"
+		if params['zinc'] == True:
+			part += "_zinc"
+		part += "_"+params['lib']
+		part += "/out.final"
+		h = open(part, "r")
+		galmass = float(h.readline().split()[1])
+		h.close()
+		print("using out.final from : "+part)
+		return part
+	except:
+		#determines what out.final file to use for fake analysis
+		inList = sp.check_output(["ls",galdir]).splitlines()
+		for i in range(0,len(inList)):
+			inList[i] = inList[i].decode("ASCII")
+		cull = fnmatch.filter(inList,"sfh_fullres*")
+		tries = ['_zinc_MIST','_zinc_PARSEC', '_zinc', '_MIST', '_PARSEC', '']
+		for i in tries:
+			try:
+				this = cull.index("sfh_fullres"+i)
+				h = open(galdir+cull[this]+"/out.final", "r")
+				galmass = float(h.readline().split()[1])
+				h.close()
+				print("using out.final from : "+galdir+cull[this]+"/out.final")
+				return galdir+cull[this]+"/out.final"
+			except:
+				continue
 def fullFake(galdir, basis, params):
 	#finds filter values that max. total lum. in output file. Uses this to find M/L ratio of galaxy
 	
@@ -528,12 +541,13 @@ def fullFake(galdir, basis, params):
 	pwd = params['baseFake']
 	galflux = params['flux']
 	galdist = params['dist']
+	galvals = [galflux, galdist]
 	goodfilt = params['depths']
 	zinc = params['zinc']
 	lib = params['lib']
 	
 	
-	fold = params['data']+params['gal']+"_store/"
+	fold = params['data']+params['gal']+params['lib']+"_store/"
 	comm = "mkdir "+fold
 	sp.call(comm.split())
 	
@@ -561,7 +575,7 @@ def fullFake(galdir, basis, params):
 	f.close()
 	
 	#open out.final from sfh_fullres, needed for sfr z values
-	goodfin = findOut(galdir)
+	goodfin = findOut(galdir, params)
 	h = open(goodfin, "r")
 	galmass = float(h.readline().split()[1])	#store gal mass for later, also sets file up to start reading timebins
 	j = open("sfh_fullres", 'r') 	#open timebin file for # of timebins
@@ -660,7 +674,7 @@ def fullFake(galdir, basis, params):
 	
 	#produce CMD of best run
 	g = open(pwd+"results","a")
-	g.write("out.final taken from "+goodfin)
+	g.write("out.final taken from "+goodfin+"\n")
 	PlotCurve(pwd,xdepth,ydepth)
 	BestPlot(pwd, "out"+'%03d' % (runnum - 1,))
 	g.write("CMD of best run created at out"+'%03d' % (runnum - 1,)+"\n")
@@ -669,6 +683,8 @@ def fullFake(galdir, basis, params):
 	#find total luminosity of best run
 	totlum = calclum(pwd+"out"+'%03d' % (runnum - 1,), galdist)
 	g.write("Total Luminosity is "+str(totlum)+"\n")
+	g.write("Applying mass recycle rate of .3")
+	galmass = galmass*0.7
 	g.write("Gal Mass is "+str(galmass)+"\n")
 	ratio = galmass/totlum	#In sol mass/sol lum
 	g.write("Mass/Light ratio is "+str(ratio)+"\n")
