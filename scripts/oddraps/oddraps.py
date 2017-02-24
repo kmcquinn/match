@@ -12,9 +12,59 @@ import fnmatch
 import multiprocessing as mp
 import os
 import numpy as np
+'''
+HOW TO USE ODDRAPS:
 
-#python newraps.py GalFolder -zinc=True/False -time=full/no/v1/v2 -lib=PARSEC/MIST/PADOVA -pars=ParsLoc -phot=PhotLoc -fake=FakeLoc -fit=True/False -calc=True/False -ml=True/False -data=DataLoc
+python oddraps.py GalFolder -zinc=True/False -time=full/no/v1/v2 -lib=PARSEC/MIST/PADOVA -pars=ParsLoc -phot=PhotLoc -fake=FakeLoc -fit=True/False -calc=True/False -ml=True/False -data=DataLoc
 
+GalFolder = Name of galaxy folder inside /acs/ you want to run
+zinc = Runs calcsfh with or without zinc flag. For fake, chooses which out.final file inside GalFolder to use.
+time = Chooses timebin for calcsfh runs. Dictionary is found in findParams. Based on name of timebin text file inside oddraps.py folder.
+lib = Selects library used for calcsfh and fake
+pars / phot / fake = if desired, allows to manually navigate to the calcsfh files desired (ex: file has non-default name). pars is just the default pars file that came with the gal. Used as template to construct actual pars files used.
+fit = Run Depth tests. Paramaters need to be changed inside function for larger step sizes, number of plots made, etc.
+calc = Run calcsfh analysis.
+ml = Run fake analysis. data flag required
+All three components can be run independantly if desired. Probably necessary due to time restrictions.
+data = Location of your $DATA folder on TACC, as this is a high I/O operation. Will automatically create folder for junk data for each galaxy.
+
+
+WORKFLOW:
+
+1.) Add new galaxy info into GalCatalog
+2.) Run new galaxy depth tests with fit=True
+3.) Look through plots, pick favorite filter values
+4.) Add in filter values to GalCatalog
+5.) Run calcsfh w/ favorite timebin, library, etc. w/ calc=True
+6.) Run fake on gal after out.final is generated. Can select specific out.final using zinc,time,lib flags. Otherwise automatic.
+
+
+EXAMPLE CALLS:
+
+	I just want to create a lot of depth tests to figure out the filter depths I like:
+		python oddraps.py 10210_UGC9128 -zinc=False -time=full -lib=PARSEC -fit=True -calc=False -ml=False
+	We figured out what filters to add into GalCatalog. I just want to do the calcsfh analysis with this library:
+		python oddraps.py 10210_UGC9128 -zinc=True -time=full -lib=MIST -fit=False -calc=True -ml=False
+	I've run at least one calcsfh job on this galaxy, so I can do it's corrosponding fake run:
+		python oddraps.py 10210_UGC9128 -time=full -lib=MIST -fit=False -calc=False -ml=True 
+
+
+ADDING NEW TIMEBINS:
+
+timebin files (synced on github) needed for oddraps
+format is just the timebin information part of a calcsfh pars file:
+NUMofTIMEBINS
+     Ti1 Tf1
+     Ti2 Tf2
+(etc.)
+to use new timebin, name this file as desired name of galaxy folders (SFH_FULLRES => /metals_proc/SFH_FULLRES_zinc_lib)
+inside findParams function, add key & value for timebin parameter:
+	elif check == "newTimeName":
+				sets['time'] = 'new_time_folder'
+call with:
+	python oddraps.py ... -time=newTimeName ...
+
+'''
 def findParams():
 	#creates dict of parameters based on input command
 	args = sys.argv
@@ -384,6 +434,7 @@ def Calcwork(arr):
 	sp.call(comm.split(),stdout=f)
 	f.close()
 	return 0
+
 def fullCalc(bpath, params):
 	#runs calcsfh analysis with MC and systematics?
 	'''
@@ -489,7 +540,6 @@ def fullCalc(bpath, params):
 	#so we have created the pars file used in the main calcsfh runs, and completed a full calcsfh analysis of this galaxy
 	#a plot has been created showing the fit and uncertainties
 
-
 def Fakework(comm):
 	#dummy function for parallelizing fake analysis
 	sp.call(comm.split())
@@ -525,6 +575,7 @@ def findOut(galdir, params):
 				return galdir+cull[this]+"/out.final"
 			except:
 				continue
+
 def fullFake(galdir, basis, params):
 	#finds filter values that max. total lum. in output file. Uses this to find M/L ratio of galaxy
 	
@@ -683,7 +734,7 @@ def fullFake(galdir, basis, params):
 	#find total luminosity of best run
 	totlum = calclum(pwd+"out"+'%03d' % (runnum - 1,), galdist)
 	g.write("Total Luminosity is "+str(totlum)+"\n")
-	g.write("Applying mass recycle rate of .3")
+	g.write("Applying mass recycle rate of .3"+"\n")
 	galmass = galmass*0.7
 	g.write("Gal Mass is "+str(galmass)+"\n")
 	ratio = galmass/totlum	#In sol mass/sol lum
@@ -758,7 +809,6 @@ def makeFakePars(pwd, runber, totest):
 		for line in fobj:
 			g.write(line)
 	g.close()
-	
 
 def calclum(path_to_fakeout, galdist):
 	#calculates lum of gal based on fake out file
@@ -780,6 +830,7 @@ def calclum(path_to_fakeout, galdist):
 		tlum = tlum + mbol[i]
 	print(tlum)
 	return tlum
+
 
 def main():
 	#read sys.argv to determine parameters of run
