@@ -127,6 +127,7 @@ def plot(cmdfile_name, outfile_name, plot_name):
 	line = cmdfile.readline()
 	print(line)
 	shape = [int(i) for i in cmdfile.readline().split()]
+	shape = shape[1:3]
 	line_col, line_mag = cmdfile.readline(), cmdfile.readline()
 	magbins, colbins = np.zeros(shape[0]), np.zeros(shape[1])
 	obs_arr, mod_arr = np.zeros(shape), np.zeros(shape)
