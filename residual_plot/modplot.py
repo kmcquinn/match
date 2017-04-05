@@ -85,7 +85,7 @@ def plot_Hist(fig, x, y, subx1, suby2, subsize, title, xlabel, ylabel,linestyle,
 	print(x, errx)
 	ax = fig.add_axes([subx1, suby2, subsize, subsize])
 	ax.step(x, y, color='k')
-	ax.errorbar(errx,y,yerr=[errlow,errhigh], fmt='none', capsize=0, ecolor='r', elinewidth=0.7)
+	ax.errorbar(errx,y,yerr=[errlow,errhigh], capsize=0, ecolor='r', elinewidth=0.7)
 	ax.set_title(title, fontsize=8)
 	ax.set_xlabel(xlabel, fontsize=8)
 	ax.set_ylabel(ylabel, fontsize=8)
@@ -127,7 +127,6 @@ def plot(cmdfile_name, outfile_name, plot_name):
 	line = cmdfile.readline()
 	print(line)
 	shape = [int(i) for i in cmdfile.readline().split()]
-	shape = shape[1:3]
 	line_col, line_mag = cmdfile.readline(), cmdfile.readline()
 	magbins, colbins = np.zeros(shape[0]), np.zeros(shape[1])
 	obs_arr, mod_arr = np.zeros(shape), np.zeros(shape)
