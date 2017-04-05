@@ -125,6 +125,7 @@ def plot(cmdfile_name, outfile_name, plot_name):
 
 	cmdfile = open(cmdfile_name, 'r')
 	line = cmdfile.readline()
+	print(line)
 	shape = [int(i) for i in cmdfile.readline().split()]
 	shape = shape[1:3]
 	line_col, line_mag = cmdfile.readline(), cmdfile.readline()
