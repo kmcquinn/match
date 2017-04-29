@@ -13,6 +13,8 @@ import multiprocessing as mp
 import os
 import numpy as np
 '''
+ODDRAPS = On Dwarf Disks, Running A Python Script
+
 HOW TO USE ODDRAPS:
 
 python oddraps.py GalFolder -zinc=True/False -time=full/no/v1/v2 -lib=PARSEC/MIST/PADOVA -pars=ParsLoc -phot=PhotLoc -fake=FakeLoc -fit=True/False -calc=True/False -ml=True/False -data=DataLoc
