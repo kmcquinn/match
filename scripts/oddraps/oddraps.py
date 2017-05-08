@@ -351,32 +351,10 @@ def calcFit(bir, scr, filtStart, zinc):
 	scrPhot = scr+"phot"	#save path to phot and fake files for convienence
 	scrFake = scr+"fake"
 	
-	#For now, not going to incorporate random depth runs. It would probably go here anyway
 	#Need to grab initial filter values from the editFiles function
 	sold = []	#stores base fit, start depths
 	sold.append(0)
 	sold = sold + filtStart
-	
-	#before starting all the runs, I need to run calcsfh once with these starting depths to get a baseline to compare all the permutations with
-	#first step is to create the pars file with the starting depths
-	'''
-	makePars(bir, scrstring+"parsFirst", sold[1:], "sfh_fullres")
-	comm = "calcsfh "+scrstring+"parsFirst "+scrPhot+" "+scrFake+" "+scrstring+"outFirst -Kroupa -PARSEC"
-	fitstr = sp.check_output(comm.split()).splitlines()[-1].split()[-1]
-	#check consolefile to record starting fit value
-	#format: 'fit=3573.515152'
-	fitval = float(fitstr[4:])
-	print("fitval is: "+str(fitval))
-	#record this value to sold array
-	sold[0] = fitval
-	'''
-	#let blue vary from 31 to 41
-	#let red vary from 31 to 41
-	
-	delta = .33		#choose how much values differ between runs
-	maxdelta = .25		#choose max deviation from start values
-	runnum = 1		#keeps track of number of completed cycles
-	maxrun = int(maxdelta/delta)
 	
 	flail = 0
 	commdict = {} #commdict[flail] = [strflail, filtList, command, fit]
@@ -384,6 +362,9 @@ def calcFit(bir, scr, filtStart, zinc):
 	fitlist = []
 	g = open(scrstring+"FiltResults","w")
 	g.write("Run Number\tDepth1\tDepth2\tFit Value\n")
+	delta = .33		#choose how much values differ between runs
+	#let blue vary from 31 to 41
+	#let red vary from 31 to 41
 	bluearr = np.arange(31.0,41.0,delta)
 	redarr = np.arange(31.0,41.0,delta)
 	for i in bluearr:
@@ -467,7 +448,6 @@ def fullCalc(bpath, params):
 	#teffdata in Desktop dir has it all
 	err = []
 	vals = []
-##This is a bad way to calculate error
 	with open('teffdata', 'r') as fobj:
 		fobj.readline()
 		for line in fobj:
