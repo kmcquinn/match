@@ -1,0 +1,67 @@
+ODDRAPS = On Dwarf Disks, Running A Python Script
+
+HOW TO USE ODDRAPS:
+
+python oddraps.py GalFolder -zinc=True/False -time=full/no/v1/v2 -lib=PARSEC/MIST/PADOVA -pars=ParsLoc -phot=PhotLoc -fake=FakeLoc -fit=True/False -calc=True/False -ml=True/False -data=DataLoc
+
+GalFolder = Name of galaxy folder inside /acs/ you want to run
+zinc = Runs calcsfh with or without zinc flag. For fake, chooses which out.final file inside GalFolder to use.
+time = Chooses timebin for calcsfh runs. Dictionary is found in findParams. Based on name of timebin text file inside oddraps.py folder.
+lib = Selects library used for calcsfh and fake
+pars / phot / fake = if desired, allows to manually navigate to the calcsfh files desired (ex: file has non-default name). pars is just the default pars file that came with the gal. Used as template to construct actual pars files used.
+fit = Run Depth tests. Paramaters need to be changed inside function for larger step sizes, number of plots made, etc.
+calc = Run calcsfh analysis.
+ml = Run fake analysis. data flag required
+All three components can be run independantly if desired. Probably necessary due to time restrictions.
+data = Location of your $DATA folder on TACC, as this is a high I/O operation. Will automatically create folder for junk data for each galaxy.
+
+
+WORKFLOW:
+
+1.) Add new galaxy info into GalCatalog
+2.) Create dummy pars file with distance, filters
+3.) Add galaxy files and pars to new folder in /acs/
+4.) Run new galaxy depth tests with fit=True
+5.) Look through plots, pick favorite filter values
+6.) Add in filter values to GalCatalog
+7.) Run calcsfh w/ favorite timebin, library, etc. w/ calc=True
+8.) Run fake on gal after out.final is generated. Can select specific out.final using zinc,time,lib flags. Otherwise automatic.
+
+
+EXAMPLE CALLS:
+
+	I just want to create a lot of depth tests to figure out the filter depths I like:
+		python oddraps.py 10210_UGC9128 -zinc=False -time=full -lib=PARSEC -fit=True -calc=False -ml=False
+	We figured out what filters to add into GalCatalog. I just want to do the calcsfh analysis with this library:
+		python oddraps.py 10210_UGC9128 -zinc=True -time=full -lib=MIST -fit=False -calc=True -ml=False
+	I've run at least one calcsfh job on this galaxy, so I can do it's corrosponding fake run:
+		python oddraps.py 10210_UGC9128 -time=full -lib=MIST -fit=False -calc=False -ml=True 
+
+
+ADDING NEW TIMEBINS:
+
+timebin files (synced on github) needed for oddraps
+format is just the timebin information part of a calcsfh pars file:
+NUMofTIMEBINS
+     Ti1 Tf1
+     Ti2 Tf2
+(etc.)
+to use new timebin, name this file as desired name of galaxy folders (SFH_FULLRES => /metals_proc/SFH_FULLRES_zinc_lib)
+inside findParams function, add key & value for timebin parameter:
+	elif check == "newTimeName":
+				sets['time'] = 'new_time_folder'
+call with:
+	python oddraps.py ... -time=newTimeName ...
+	
+FOLDER STRUCTURE:
+
+basedir variable in main() defines location of metals_proc folder
+creates folder inside metals_proc for copying files, depth tests = scriptdir
+output of calc, fake runs placed in new folder inside metals_proc
+	calcsfh_zinc_MIST / fake_PADOVA / calcsfh_MIST
+setFolder() copies over galaxy files with assumed directories, names
+	can be manually overwritten using fake, phot, pars flags
+	assumes dummy pars file in /conf_new_dol/, ending with *matchpars231
+	assumes phot in /proc_new_dol/, ending with *.gst.match
+	assumes fake in /proc_new_dol/, ending with *gst.matchfake
+

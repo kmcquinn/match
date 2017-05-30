@@ -1,0 +1,8 @@
+Files needed to run oddraps:
+GalCatalog	Used to look up gal name, flux, depths, etc
+oddraps.py	Main python script
+sfh_*		Text files with timebin info used to create pars files
+teffdata	Used to select values for mbol, teff in calcsfh
+
+CalcBatch, FitBatch are example sbatch scripts to run oddraps on TACC
+
