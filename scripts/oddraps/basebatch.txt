@@ -1,8 +1,0 @@
-#!/bin/bash
-#SBATCH -J 
-#SBATCH -o 
-#SBATCH -n 
-#SBATCH -p normal
-#SBATCH -t 
-
-
