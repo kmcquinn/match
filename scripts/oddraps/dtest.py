@@ -15,26 +15,29 @@ import multiprocessing as mp
     # setup : sets up scriptdir
 
 
-def setup(bdir,par=None,pho=None,fa=None):
+def setup(bdir,cam='acs',par=None,pho=None,fa=None):
 	# bdir = galaxy's metals_proc directory
+	# cam = Hubble camera the data was taken with (acs/wfpc2)
 	# par = path to pars file from galaxy's metals_proc directory
 	# pho = path to phot file from galaxy's metals_proc directory
 	# fa = path to fa file from galaxy's metals_proc directory
 	
 	# makes scriptdir directory, if it doesn't exist already
-	if "scriptdir" in sp.check_output(["ls",bdir]).splitlines():
-		print "scriptdir exists"
-	else:
-		sp.call(["mkdir",bdir+"scriptdir/"])
-
+	sp.call(["mkdir",bdir+"scriptdir/"])
+	if cam=='acs':
+		conf='../conf_new_dol/'
+		proc='../proc_new_dol/'
+	elif cam=='wfpc2':
+		conf='../conf/'
+		proc='../proc/'
 	# find pars file in conf_new_dol if none specified
 	if par==None:
-		pardir=bdir+"../conf*/"
+		pardir=bdir+conf
 		parfile=sp.check_output(["ls",pardir]).splitlines()
 		parfile=[i for i in parfile if 'matchpars' in i]
 		if len(parfile)==1: # if there is only one parameter file in conf_new_dol, uses this one
 			copyfile(pardir+parfile[0],bdir+"scriptdir/basepars")
-			print "found single parameter file in conf* directory"
+			print "found single parameter file in conf directory"
 		else: # for more than one parameter file
 			parpar= [i for i in parfile if i[-12:]=='matchpars231']
                         if len(parpar)==1: # checks for *matchpars231 and if only one file is found, uses this
@@ -56,7 +59,7 @@ def setup(bdir,par=None,pho=None,fa=None):
 	
 	# copies phot file from proc_new_dol if none spedified
 	if pho==None:
-		phodir=bdir+'../proc*/'
+		phodir=bdir+proc
 		phofile=sp.check_output(["ls",phodir]).splitlines()
 		# looks for phot file with same filters specified in pars file
 		phofile=[i for i in phofile if '.gst.match' in i and red in i and blue in i]
@@ -68,7 +71,7 @@ def setup(bdir,par=None,pho=None,fa=None):
 	
 	# finds and copies fake file in proc_new_dol if none specified
 	if fa==None:
-		fadir=bdir+'../proc*/'
+		fadir=bdir+proc
 		fafile=sp.check_output(["ls",phodir]).splitlines()
                 fafile=[i for i in fafile if 'gst.matchfake' in i]
 		copyfile(fadir+fafile[0],bdir+'scriptdir/fake')
@@ -170,7 +173,6 @@ def runcalcsfh(cmdout):
 	# runs each command, waits until it's completely done, and puts the output into its corresponding output file f
 	p=sp.check_call(cmmd,stdout=f)
 	f.close()
-	# sp.check_call(['pg_cmd',out+'.cmd',out+'.ps'])
 
 def testdepth(bdir,bdep):
 	# bdir = path to metals_proc directory
@@ -247,11 +249,11 @@ def main():
 			run=i[4:]
 
 	if run=='all':
-		print setup(basedir,par=pars,pho=phot,fa=fake)
+		print setup(basedir,cam=GalDir,par=pars,pho=phot,fa=fake)
 		basepars(scriptdir)
 		testdepth(basedir,olddepth(scriptdir+'basepars'))
 	elif run == 'setup':
-                print setup(basedir,par=pars,pho=phot,fa=fake)
+                print setup(basedir,cam=GalDir,par=pars,pho=phot,fa=fake)
                 basepars(scriptdir)
                 testdepth(basedir,olddepth(scriptdir+'basepars'))
 	elif run=='fit':
