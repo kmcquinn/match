@@ -230,7 +230,7 @@ def maketab(nam,filnam,output):
 def main():
         filnam=arg[1]
 	gal=arg[2]
-	res="sfh_fullres"
+	res=arg[3]
         galdir='/work/04316/kmcquinn/wrangler/metals/galaxies/'+gal
         nam=open(filnam,'r')
         with open(filnam) as f:
@@ -239,9 +239,9 @@ def main():
         for i in bu:
                 naml.append(i.split("\t"))
         for i in naml:
-		maketab(i[1],galdir+'/'+i[0]+'/metals_proc/'+res+'_zinc_MIST/out.hybrid.final',res+'_nosys')
-                maketab(i[1],galdir+'/'+i[0]+'/metals_proc/'+res+'_zinc_PADOVA/out.hybrid.final',res+'_nosys')
-    
+		maketab(i[1],galdir+'/'+i[0]+'/metals_proc/'+res+'_zinc_MIST/out.hybrid.final',res+'_mrflist')
+                maketab(i[1],galdir+'/'+i[0]+'/metals_proc/'+res+'_zinc_PADOVA/out.hybrid.final',res+'_mrflist')
+
 
 
 if __name__ == '__main__':

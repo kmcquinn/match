@@ -1,0 +1,29 @@
+calcmet is a script that calculates the metal retention fraction of galaxies.
+
+-- HOW TO RUN calcmet.py --
+
+SYNTAX:
+python calcmet.py [File with galaxy names] [Camera used to observe (acs/wfpc2)] [Resolution (sfh_fullres/sfh_nores/sfh_starburst_v1/sfh_starburst_v2)]
+
+-Data Files-
+**These files are required to be in the same directory as calcmet.py for it to run properly. They should already be in the calcmet directory and do not require any kind of editing**
+metals_opticaldata.txt - Contains HI flux measurements.
+galaxy_list_0.txt - Contains gas mass measurements.
+
+-Input Files-
+File with galaxy names - A text file with two columns and one galaxy per line. First column must be the name of the galaxy's directory while the second column is just the name of the galaxy. Please exclude spaces. This is the only file that you would need to change. You may need to omit some galaxies due to permissions errors and incomplete runs.
+
+Example file:
+10915_NGC3109-DEEP      NGC3109
+8601_UGC6817    UGC6817
+8601_UGC7577    UGC7577
+10915_NGC4214-DEEP      NGC4214
+8769_UGC4483    UGC4483
+...		...
+
+-Output Files-
+sfh_[resolution]_mrflist - first column is name of galaxies, second column is metal retention fraction, third column is upper limit, and fourth column is lower limit. Each galaxy has two rows. The top row is the MRF calculated using MIST and the bottom row is the MRF calculated using PARSEC.
+
+-- KNOWN ISSUES --
+-Error: Could not convert string to float
+	This is due to the fact that the out.final.hybrid for a certain galaxy either does not exist or there are permissions errors. You can see which one it is by comparing the output files to the input galaxy name file to see which galaxy is the last one on the list.
