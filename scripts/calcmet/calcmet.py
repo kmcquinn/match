@@ -1,8 +1,3 @@
-
-# coding: utf-8
-
-# In[38]:
-
 import numpy as np
 from sys import argv as arg
 import os
@@ -102,7 +97,7 @@ def cogas(nam):     # nam = galaxy name, no 0's before number (ex. UGC8508, not 
 
     if nam in gas['gal']:     # Checks if galaxy's oxygen abundances are available
         i=itin(nam,gas['gal'])
-        z=gas['z'][i]
+	z=gas['z'][i]
         zerr=gas['zerr'][i]
 
     else:     # Changes input nam if galaxy isn't found in data
@@ -124,7 +119,7 @@ def cogas(nam):     # nam = galaxy name, no 0's before number (ex. UGC8508, not 
 
     if nam in hi['gal']:
         i=itin(nam,hi['gal'])
-        ahg=2.356e5*(float(hi['dist'][i])**2)*10**(float(hi['loghi'][i]))
+	ahg=2.356e5*(float(hi['dist'][i])**2)*10**(float(hi['loghi'][i]))
         # ahg = atomic hydrogen gas mass
     else:     # Changes input nam if galaxy isn't found in database
         ham = nam[0:3]+'0'+nam[3:]
@@ -134,7 +129,7 @@ def cogas(nam):     # nam = galaxy name, no 0's before number (ex. UGC8508, not 
         else:
             ham = ham[0:3]+'0'+ham[3:]
             i=itin(ham,gas['gal'])
-            if i != None:
+	    if i != None:
                 ahg=2.356e5*(float(hi['dist'][i])**2)*10**(float(hi['loghi'][i]))
             else:
                 return 'No HI flux available for '+nam+'.'
@@ -197,7 +192,7 @@ def obud(g,s,t):     # Takes oxygen in gas, stars, and total oxygen formed
     for i in range(len(t)):
         ans.append((g[0]+s[0])/t[i][0])
         erru.append((((g[1]**2+s[1]**2)**(1./2.)/(g[0]+s[0]))**2+(t[i][1]/t[i][0])**2)**(1./2.)*ans[i])
-        errl.append((((g[1]**2+s[1]**2)**(1./2.)/(g[0]+s[0]))**2+(t[i][1]/t[i][0])**2)**(1./2.)*ans[i])
+        errl.append((((g[1]**2+s[2]**2)**(1./2.)/(g[0]+s[0]))**2+(t[i][2]/t[i][0])**2)**(1./2.)*ans[i])
     return ans,erru,errl
 
 
@@ -219,17 +214,12 @@ def maketab(nam,filnam,output):
         if output in os.listdir("."):
             thi=open(output,'a')
             thi.write('\n')
-            thi.write(nam+'\t'+str(d[0][1])+'\t'+str(d[1][1])+'\t'+str(d[2][1])+'\t'+str(a[0])+'\t'+str(a[1])+'\t'+str(b[0])+'\t'+str(b[1])
-                      +'\t'+str(b[2])+str(c[0][0])+'\t'+str(c[0][1])+'\t'+str(c[0][2])+'\t'+str(c[1][0])+'\t'
-                      +str(c[1][1])+'\t'+str(c[1][2])+'\t'+str(c[2][0])+'\t'+str(c[2][1])+'\t'+str(c[2][2]))
+            thi.write(nam+'\t'+str(d[0][1]*100)+'\t'+str(d[1][1]*100)+'\t'+str(d[2][1]*100))
             thi.close()
         else:
             thi=open(output,'w')
-            thi.write('Name\tMRF\t+\t-\tStellar Mass\t+\t-\tO_gas\t+/-\tO_star\t+\t-\tTot1\t+\t-\tTot2\t+\t-\tTot3\t+\t-')
             thi.write('\n')
-            thi.write(nam+'\t'+str(d[0][1])+'\t'+str(d[1][1])+'\t'+str(d[2][1])+str(totsf)+'\t'+str(totsfu)+'\t'+str(totsfl)+'\t'+str(a[0])+'\t'+str(a[1])+'\t'+str(b[0])+'\t'+str(b[1])
-                      +'\t'+str(b[2])+'\t'+str(c[0][0])+'\t'+str(c[0][1])+'\t'+str(c[0][2])+'\t'+str(c[1][0])+'\t'
-                      +str(c[1][1])+'\t'+str(c[1][2])+'\t'+str(c[2][0])+'\t'+str(c[2][1])+'\t'+str(c[2][2]))
+            thi.write(nam+'\t'+str(d[0][1]*100)+'\t'+str(d[1][1]*100)+'\t'+str(d[2][1]*100))
             thi.close()
 
 
@@ -238,34 +228,21 @@ def maketab(nam,filnam,output):
 # Proper syntax: python calcmet.py [name of file with data in it]
 
 def main():
-        res="sfh_fullres"
-        galdir='/work/04316/kmcquinn/wrangler/metals/galaxies/acs'
-        nam=open('filnam','r')
-        with open('filnam') as f:
+        filnam=arg[1]
+	gal=arg[2]
+	res="sfh_fullres"
+        galdir='/work/04316/kmcquinn/wrangler/metals/galaxies/'+gal
+        nam=open(filnam,'r')
+        with open(filnam) as f:
                 bu=f.read().splitlines()
         naml=[]
         for i in bu:
                 naml.append(i.split("\t"))
-        
-        mist= "False"
-        for g in arg:
-            if g[:6]=='-mist=':
-                mist=g[6:]
-        if mist == "True":
-            for i in naml:
-                maketab(i[1],galdir+'/'+i[0]+'/metals_proc/'+res+'MIST/out.final','mist'+res+'_all')
-                maketab(i[1],galdir+'/'+i[0]+'/metals_proc/'+res+'MIST/out.hybrid.final','mist'+res+'_nosys')
-        if mist == "False":
-            for i in naml:
-                maketab(i[1],galdir+'/'+i[0]+'/metals_proc/'+res+'/out.final','parsec'+res+'_all')
-                maketab(i[1],galdir+'/'+i[0]+'/metals_proc/'+res+'/out.hybrid.final','parsec'+res+'_nosys')
+        for i in naml:
+		maketab(i[1],galdir+'/'+i[0]+'/metals_proc/'+res+'_zinc_MIST/out.hybrid.final',res+'_nosys')
+                maketab(i[1],galdir+'/'+i[0]+'/metals_proc/'+res+'_zinc_PADOVA/out.hybrid.final',res+'_nosys')
     
+
 
 if __name__ == '__main__':
     main()
-
-
-# In[ ]:
-
-
-
