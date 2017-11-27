@@ -229,7 +229,7 @@ def generate_final(fullpath,galname):      # fullpath = sfh_path
     comarr.append("zcmerge "+fullpath+"out.zc "+fullpath+"out.mcmc.zc "+fullpath+"out.sys.zc -absolute > "+fullpath+"out.final")
     #combining wih hybrid uncertainities for comparison
     comarr.append("zcmerge "+fullpath+"out.zc "+fullpath+"out.mcmc.zc -absolute > "+fullpath+"out.hybrid.final")
-    comarr.append('python plot.py '+fullpath+'out.cmd '+fullpath+'out.final '+fullpath+galname+'.png')
+    comarr.append('python 9_panel.py '+fullpath+'out.cmd '+fullpath+'out.final '+fullpath+galname+'.png')
     for i in comarr:
 	os.system(i)
 	#so we have created the pars file used in the main calcsfh runs, and completed a  calcsfh analysis of this galaxy
