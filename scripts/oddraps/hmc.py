@@ -227,8 +227,7 @@ for i,e in enumerate(datfs):
                 break
             """
 
-    #MELISSA THIS TOO MAYBE
-    nmc_=10000 # used to be 100	
+    nmc_=100000
     sburn_=10
 
     out_sh_t = 'hybridMC '+' '.join([inputf,outputf_cmd,'-nmc='+str(nmc_),'-dt='+str(dt_),'-tint='+str(tint_),'-sburn='+str(sburn_)])

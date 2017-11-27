@@ -19,15 +19,16 @@ What Goodraps Does:
 
 Setup Required:
 - Place phot and fake files into input_data directory located in metals_proc OR specify the paths to these files on command line with -phot and -fake arguments
+- Create directory with the naming convention 'sfh_[RESOLUTION]_[LIBRARY]' in the metals_proc directory
 - Create parameter file and place it in the main sfh directory (this will be automated soon!)
 '''
 
 '''
 (DEVELOPMENT)
 Fun things to include:
-- Customizable depths
 - Specify which steps to run
-- Include argument to customize metals_proc and  path
+- Make runs with no zinc flag in separate directory
+ 
 
 Does not work:
 - running hmc's with no zinc flag (create nozinchmc.py which is just tony's code that works with no zinc)
@@ -220,7 +221,7 @@ def run_calcmc(mp_path,sfh_path,args,params):
 	pool.join()
 
 # Takes path to directory that contains all of the previous runs (initial calcsfh, hmc, 50 MC calcsfh's) and combines the results to generate a final results file.
-def generate_final(fullpath):      # fullpath = sfh_path
+def generate_final(fullpath,galname):      # fullpath = sfh_path
     comarr = []
     comarr.append("zcombine "+fullpath+"out > "+fullpath+"out.zc")
     comarr.append("zcombine -unweighted -medbest -jeffreys -best="+fullpath+"out.zc "+fullpath+"out.mcmc > "+fullpath+"out.mcmc.zc")
@@ -228,9 +229,9 @@ def generate_final(fullpath):      # fullpath = sfh_path
     comarr.append("zcmerge "+fullpath+"out.zc "+fullpath+"out.mcmc.zc "+fullpath+"out.sys.zc -absolute > "+fullpath+"out.final")
     #combining wih hybrid uncertainities for comparison
     comarr.append("zcmerge "+fullpath+"out.zc "+fullpath+"out.mcmc.zc -absolute > "+fullpath+"out.hybrid.final")
+    comarr.append('python plot.py '+fullpath+'out.cmd '+fullpath+'out.final '+fullpath+galname+'.png')
     for i in comarr:
-		os.system(i)
-	
+	os.system(i)
 	#so we have created the pars file used in the main calcsfh runs, and completed a  calcsfh analysis of this galaxy
 	#a plot has been created showing the fit and uncertainties
 
@@ -257,7 +258,7 @@ def main():
     run_initial_calcsfh(mp_path,sfh_path,args)
     run_hmc(sfh_path)
     run_calcmc(mp_path,sfh_path,args,params)
-    generate_final(sfh_path)
+    generate_final(sfh_path,args.galpath[:-1])
 
 
 if __name__ == "__main__":
