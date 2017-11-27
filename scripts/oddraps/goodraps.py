@@ -1,4 +1,6 @@
 '''
+TEMPORARY INITIAL SETUP: You will have to create a directory with a name like 'sfh_fullres_MIST' (or whatever resolution/library you're using) and copy a premade parameter file into this directory until we are able to create pars files automatically with this code.
+
 Syntax: python goodraps.py [galaxy directory name] [resolution] [library]
 Optional arguments:
 -phot [path to phot file from galaxy's metals_proc directory] : specifies where the phot file you would like to use is located
@@ -49,7 +51,7 @@ def parse_options():
         parser.add_argument('lib',action='store',help='stellar evolution library used for derivation (parsec/mist/padova)')
         parser.add_argument('-phot',dest='phot',action='store',help="location of phot file from galaxy's metals_proc directory",default='input_data/phot')
         parser.add_argument('-fake',dest='fake',action='store',help="location of fake file from galaxy's metals_proc directory",default='input_data/fake')
-        parser.add_argument('-galpath',dest='galpath',action='store',help='full path to galaxies directory',default='/work/04316/kmcquinn/wrangler/metals/galaxies/')
+	parser.add_argument('-galpath',dest='galpath',action='store',help='full path to galaxies directory',default='/work/04316/kmcquinn/wrangler/metals/galaxies/')
 	parser.add_argument('-nozinc',dest='nozinc',action='store_true')
         # Parses through the arguments and saves them within the keyword args
         args = parser.parse_args()
@@ -121,6 +123,7 @@ def run_initial_calcsfh(mp_path,sfh_path, args):
 	photLoc = mp_path+args.phot
 	fakeLoc = mp_path+args.fake
 	#run calcsfh once for use with hybridMC
+	######## CHANGE PATH TO PARAMETER FILE ONCE CODE CAN GENERATE PARAMETER FILES ###################
 	comm1 = "calcsfh "+sfh_path+"pars "+photLoc+" "+fakeLoc+" "+sfh_path+"out -Kroupa "
 	if (args.lib == "mist") or (args.lib == "parsec"):
 		comm2 = "-"+args.lib.upper()+" "
@@ -139,7 +142,7 @@ def run_initial_calcsfh(mp_path,sfh_path, args):
 # runs HMC
 def run_hmc(sfh_path):
 	#run code to find hmc parameters
-	comm = "python otherhmc.py "+sfh_path
+	comm = "python hmc.py "+sfh_path
 	f = open(sfh_path+'hmc_console_output.dat','w')
 	sp.call(comm.split(),stdout=f)
 	f.close()
@@ -150,7 +153,7 @@ def run_hmc(sfh_path):
 	# hybridMC command to be run should be last line in hybrid_params.dat file
 	comm = pars[-1]
 	#run hybridMC 1000 times
-	f = open(sfh_path+"hybrid_console.txt", "wb")
+	f = open(sfh_path+"hybrid_console.txt", "w")
 	sp.call(comm,stdout=f)
 	f.close()
 
@@ -238,7 +241,7 @@ def main():
     params = read_params(args.galaxydir)
 
     # Ensures the input path to the full 'galaxies' directory ends in a slash to avoid future error
-    if args.galpath[-1] =! '/':
+    if args.galpath[-1] != '/':
 	args.galpath = args.galpath + '/'
 
     # Specifies path to metals_proc directory within main galaxy directory
