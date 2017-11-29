@@ -9,7 +9,7 @@
 import numpy as np
 import matplotlib
 #uncomment line below for TACC usage
-#matplotlib.use("Agg")
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.colors as cl
 import sys
