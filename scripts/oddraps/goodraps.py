@@ -255,10 +255,10 @@ def main():
     	comm = "mkdir "+sfh_path
     	sp.call(comm.split())
 
-    run_initial_calcsfh(mp_path,sfh_path,args)
-    run_hmc(sfh_path)
-    run_calcmc(mp_path,sfh_path,args,params)
-    generate_final(sfh_path,args.galpath[:-1])
+    #run_initial_calcsfh(mp_path,sfh_path,args)
+    #run_hmc(sfh_path)
+    #run_calcmc(mp_path,sfh_path,args,params)
+    generate_final(sfh_path,args.galaxydir)
 
 
 if __name__ == "__main__":
