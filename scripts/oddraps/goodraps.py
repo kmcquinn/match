@@ -126,7 +126,7 @@ def run_initial_calcsfh(mp_path,sfh_path, args):
 	#run calcsfh once for use with hybridMC
 	######## CHANGE PATH TO PARAMETER FILE ONCE CODE CAN GENERATE PARAMETER FILES ###################
 	comm1 = "calcsfh "+sfh_path+"pars "+photLoc+" "+fakeLoc+" "+sfh_path+"out -Kroupa "
-	if (args.lib == "mist") or (args.lib == "parsec"):
+	if (args.lib == "MIST") or (args.lib == "PARSEC"):
 		comm2 = "-"+args.lib.upper()+" "
 	else:
 		comm2 = " "
