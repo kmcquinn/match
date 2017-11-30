@@ -5,8 +5,9 @@ from astropy.table import Table,Column,hstack,vstack
 zsol = 8.69     # Solar z
 fake = 8.0     # Test gas z
 
-
-# In[39]:
+'''
+python calcmet.py [file with galaxies] [resolution] [library]
+'''
 
 # Searches for item in a list and returns the index of the item in the list if it is in the list
 def itin(x,pop):
@@ -138,7 +139,7 @@ def cogas(nam):     # nam = galaxy name, no 0's before number (ex. UGC8508, not 
     agm = 1.33 * ahg     # Total atomic gas mass, includes helium
     mg = 0.1 * agm     # Molecular gas mass (assuming no availabe measurements)
     gm = agm + mg     # Total mass of gas
-    return [gm*16.*10**(z-12.),abs(gm*16.*10**(z-12.)*np.log(10))*zerr]
+    return [[gm*16.*10**(z-12.),abs(gm*16.*10**(z-12.)*np.log(10))*zerr],ahg]
 
 
 # In[42]:
@@ -149,7 +150,7 @@ Calculates the amount of oxygen locked in the stars.
 
 def costar(r,ru,rl,st,et,z,zerru,zerrl):    # Takes sfr, sfr upper and lower uncertainty, time bin, metallicity,
                                             # upper and lower uncertainties
-    Rec = 1./3.     # Recycling Fraction
+    Rec = .436    # Recycling Fraction
     somd = []     # Scaled oxygen mass density for each time bin
     somderu = []
     somderl = []
@@ -206,7 +207,8 @@ def maketab(nam,filnam,output):
     define(filnam)
     gastab('galaxy_list_O.txt')
     hitab('metals_opticaldata.txt')
-    a=cogas(nam)
+    a=cogas(nam)[0]
+    ahg = cogas(nam)[1]
     b=costar(dat['sfr'],dat['sfru'],dat['sfrl'],dat['start'],dat['end'],dat['met'],dat['metu'],dat['metl'])
     c=cogal(totsf,totsfu,totsfl)
     d=obud(a,b,c)
@@ -214,13 +216,14 @@ def maketab(nam,filnam,output):
         if output in os.listdir("."):
             thi=open(output,'a')
             thi.write('\n')
-            thi.write(nam+'\t'+str(d[0][1]*100)+'\t'+str(d[1][1]*100)+'\t'+str(d[2][1]*100))
+            thi.write(nam+'\t'+str(d[0][1]*100)+'\t'+str(d[1][1]*100)+'\t'+str(d[2][1]*100)+'\t'+str(totsf)+'\t'+str(ahg)+'\t'+str(ahg/totsf))
             thi.close()
         else:
             thi=open(output,'w')
+            thi.write('GalaxyName\tMRF\t+\t-\tMstar\t+\t-\tMgas\tMgas/Mstar')
             thi.write('\n')
-            thi.write(nam+'\t'+str(d[0][1]*100)+'\t'+str(d[1][1]*100)+'\t'+str(d[2][1]*100))
-            thi.close()
+            thi.write(nam+'\t'+str(d[0][1]*100)+'\t'+str(d[1][1]*100)+'\t'+str(d[2][1]*100)+'\t'+str(totsf)+'\t'+str(totsfu)+'\t'+str(totsfl)+'\t'+str(ahg)+'\t'+str(ahg/totsf))
+	    thi.close()
 
 
 # In[45]:
@@ -229,9 +232,9 @@ def maketab(nam,filnam,output):
 
 def main():
         filnam=arg[1]
-	gal=arg[2]
-	res=arg[3]
-        galdir='/work/04316/kmcquinn/wrangler/metals/galaxies/'+gal
+	res=arg[2]
+	lib=arg[3]
+        galdir='/work/04316/kmcquinn/wrangler/metals/galaxies/acs'
         nam=open(filnam,'r')
         with open(filnam) as f:
                 bu=f.read().splitlines()
@@ -239,8 +242,7 @@ def main():
         for i in bu:
                 naml.append(i.split("\t"))
         for i in naml:
-		maketab(i[1],galdir+'/'+i[0]+'/metals_proc/'+res+'_zinc_MIST/out.hybrid.final',res+'_mrflist')
-                maketab(i[1],galdir+'/'+i[0]+'/metals_proc/'+res+'_zinc_PADOVA/out.hybrid.final',res+'_mrflist')
+                maketab(i[1],galdir+'/'+i[0]+'/metals_proc/'+res+'_'+lib+'/out.hybrid.final',res+'_mrflist')
 
 
 
