@@ -222,7 +222,7 @@ def maketab(nam,filnam,output):
             thi=open(output,'w')
             thi.write('GalaxyName\tMRF\t+\t-\tMstar\t+\t-\tMgas\tMgas/Mstar')
             thi.write('\n')
-            thi.write(nam+'\t'+str(d[0][1]*100)+'\t'+str(d[1][1]*100)+'\t'+str(d[2][1]*100)+'\t'+str(totsf)+'\t'+str(totsfu)+'\t'+str(totsfl)+'\t'+str(ahg)+'\t'+str(ahg/totsf))
+            thi.write(nam+'\t'+str(d[0][1]*100)+'\t'+str(d[1][1]*100)+'\t'+str(d[2][1]*100)+'\t'+str(totsf)+'\t'+str(ahg)+'\t'+str(ahg/totsf))
 	    thi.close()
 
 
@@ -242,7 +242,7 @@ def main():
         for i in bu:
                 naml.append(i.split("\t"))
         for i in naml:
-                maketab(i[1],galdir+'/'+i[0]+'/metals_proc/'+res+'_'+lib+'/out.hybrid.final',res+'_mrflist')
+                maketab(i[1],galdir+'/'+i[0]+'/metals_proc/'+res+'_'+lib+'/out.hybrid.final',lib+'_mrflist')
 
 
 
