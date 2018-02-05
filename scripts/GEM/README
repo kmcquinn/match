@@ -1,0 +1,102 @@
+TABLE OF CONTENTS:
+1. HOW TO USE GEM
+2. NEEDED FILES IN GEM DIRECTORY
+3. NOT NEEDED FILES IN GEM DIRECTORY
+4. HOW TO USE DTEST
+
+############################################
+############## HOW TO USE GEM ##############
+############################################
+
+WHAT IT DOES:
+	Derives the full star formation history and age-metallicity relation for one galaxy in a specified time resolution using a specified stellar evolution library. Includes errors.
+
+SYNTAX: python gem.py [galaxy directory name] [resolution] [stellar evolution library] [optional arguments]
+
+	Optional arguments:
+	-phot [path to phot file from galaxy's metals_proc directory]
+			default = input_data/phot
+			specifies the location of the phot file relative to the galaxy's metals_proc directory
+
+	-fake [path to fake file from galaxy's metals_proc directory]
+	 		default = input_data/fake
+			specifies the location of the fake file relative to the galaxy's metals_proc directory
+
+	-nozinc
+			use if you do not want to include zinc in your run
+
+	-galpath [full path to '/galaxies/' directory]
+	 		default = /work/04316/kmcquinn/wrangler/metals/galaxies/
+			specifies the main directory in which directories for all galaxy observations are located, usually just called '[long path here]/galaxies/'
+
+INITIAL SETUP:
+ 	1. Place phot and fake files into input_data directory, located in the metals_proc directory OR specify the path to these files as an optional argument when running gem
+ 	*2. Create directory with a naming convention that follows 'sfh_[RESOLUTION]_[LIBRARY]' in the metals_proc directory
+ 	*3. Create parameter file and place it in the main sfh directory
+
+ 	* = these steps should be automated
+
+FINAL OUTPUT:
+	- out.final : contains the overall output from the entire run, including the SFH, age-Z relation, total stellar mass, and all uncertainties
+	- [galaxy name].pdf : plot of the observed CMD, fitted CMD, residuals, SFH, and age-Z relation
+	- 50 monte carlo runs : used for testing systematic uncertainties
+	- hybridMC output : finding statistical uncertainties
+
+WORK THAT NEEDS TO BE DONE:
+ 	- Actually implement the nozinc functionality
+ 	- Automate the creation of parameter files
+ 	- Fix hmc.py so it works with no zinc flags
+
+
+#######################################
+#### NEEDED FILES IN GEM DIRECTORY ####
+#######################################
+
+9_panel.py
+	Used to create 9-panel plots of the observed and fitted CMD's, along with the SFH and age-Z relation
+
+hmc.py
+	Used to find input parameters for hybridMC runs
+
+
+###########################################
+#### NOT NEEDED FILES IN GEM DIRECTORY ####
+###########################################
+
+sfh_fullres
+sfh_nores
+sfh_starburst_v1res
+sfh_starburst_v2res
+	These files contain the time intervals to be written in the parameter file for each different time resolution. New resolutions can easily be created by creating a new sfh_[RESOLUTION NAME] file and putting the time steps.
+	***** USE OF THESE FILES IS NOT YET IMPLEMENTED IN GEM.PY
+
+GalCatalog
+	Contains depths and distance moduli for each galaxy, WAS used to generate parameter files
+	***** NEEDS TO BE UPDATED IN ORDER TO CONTINUE USING FOR PARAMETER FILES
+
+plot.py
+	I *think* this is the exact same as 9_panel.py, but I'm not sure
+
+
+##########################################
+############ HOW TO USE DTEST ############
+##########################################
+
+WHAT IT DOES:
+	Creates
+
+SYNTAX: python dtest.py [galaxy directory]
+
+Optional Arguments:
+	-phot= [path to phot file from metals_proc directory]
+	-pars= [path to parameter file from metals_proc directory]
+	-fake= [path to fake file from metals_proc directory]
+	-run= [all/fit/scriptdir]
+		all (default): sets up scriptdir and runs through depth tests
+		fit : runs through depth tests
+		setup : sets up scriptdir
+
+WHAT NEEDS TO BE DONE:
+	- COMMENT!!!
+	- Change scriptdir to input_data
+	- Update directory layout
