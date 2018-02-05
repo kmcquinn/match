@@ -5,7 +5,7 @@ You should run this script in match/scripts/oddraps/
 
 Directory structure: assumes galaxy directory/sfh/ is the working directory, sfh/input_data/ should contain pars, phot and fake files
 this script will create sfh/calctests/ and store results there.
-Use optional -phot, -pars, -fake flags to specify their location, or change the default setting in parse_options()
+Use optional -phot, -pars, -fake flags to specify their location, or change the default setting in parse_options().
 
 Syntax: python depth_test.py [path to working directory, ending in /] -phot=[path from working directory to phot file] -pars=... -fake=...
 e.g. python depth_test.py /work/04316/kmcquinn/wrangler/cusp_core/galaxies/acs/10210_UGC1281/sfh
