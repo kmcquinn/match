@@ -52,8 +52,9 @@ def parse_options():
         parser.add_argument('lib',action='store',help='stellar evolution library used for derivation (parsec/mist/padova)')
         parser.add_argument('-phot',dest='phot',action='store',help="location of phot file from galaxy's metals_proc directory",default='input_data/phot')
         parser.add_argument('-fake',dest='fake',action='store',help="location of fake file from galaxy's metals_proc directory",default='input_data/fake')
-	parser.add_argument('-galpath',dest='galpath',action='store',help='full path to galaxies directory',default='/work/04316/kmcquinn/wrangler/metals/galaxies/')
+	parser.add_argument('-galpath',dest='galpath',action='store',help='full path to galaxies directory',default='/work/04316/kmcquinn/wrangler/cusp_core/galaxies/')
 	parser.add_argument('-nozinc',dest='nozinc',action='store_true')
+        parser.add_argument('-dAv',dest='dAv',action='store')
         # Parses through the arguments and saves them within the keyword args
         args = parser.parse_args()
         return args
@@ -123,9 +124,10 @@ def makePars(basepath, newpath, depths, times, zinc):
 def run_initial_calcsfh(mp_path,sfh_path, args):
 	photLoc = mp_path+args.phot
 	fakeLoc = mp_path+args.fake
+        dAv = args.dAv
 	#run calcsfh once for use with hybridMC
 	######## CHANGE PATH TO PARAMETER FILE ONCE CODE CAN GENERATE PARAMETER FILES ###################
-	comm1 = "calcsfh "+sfh_path+"pars "+photLoc+" "+fakeLoc+" "+sfh_path+"out -Kroupa "
+	comm1 = "calcsfh "+sfh_path+"pars "+photLoc+" "+fakeLoc+" "+sfh_path+"out -Kroupa "+"-dAv="+args.dAv+" "
 	if (args.lib == "MIST") or (args.lib == "PARSEC"):
 		comm2 = "-"+args.lib.upper()+" "
 	else:
@@ -246,14 +248,14 @@ def main():
 	args.galpath = args.galpath + '/'
 
     # Specifies path to metals_proc directory within main galaxy directory
-    mp_path = args.galpath+params['dir']+"/"+args.galaxydir+"/metals_proc/"
+    mp_path = args.galpath+params['dir']+"/"+args.galaxydir+"/sfh/"
     inpath = mp_path + 'input_data/'
     sfh_path = mp_path+args.res+'_'+args.lib.upper()+'/'
 
     # if the sfh_[res]_[lib] directory does not exist in basepath, creates it
     if args.res+'_'+args.lib.upper() not in glob(mp_path+'*'):
     	comm = "mkdir "+sfh_path
-    	sp.call(comm.split())
+#    	sp.call(comm.split())
 
     run_initial_calcsfh(mp_path,sfh_path,args)
     run_hmc(sfh_path)
