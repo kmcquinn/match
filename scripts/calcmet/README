@@ -1,9 +1,9 @@
-calcmet is a script that calculates the metal retention fraction of galaxies.
+calcmet is a script that calculates the metal retention fraction of galaxies. It reads in a list of galaxies from a specified file using the specified resolution and stellar evolution library.
 
 -- HOW TO RUN calcmet.py --
 
 SYNTAX:
-python calcmet.py [File with galaxy names] [Camera used to observe (acs/wfpc2)] [Resolution (sfh_fullres/sfh_nores/sfh_starburst_v1/sfh_starburst_v2)]
+python calcmet.py [File with galaxy names] [Resolution (sfh_fullres/sfh_nores/sfh_starburst_v1/sfh_starburst_v2)] [Stellar evolution library] -c [Camera used for observations (optional, default = acs)]
 
 -Data Files-
 **These files are required to be in the same directory as calcmet.py for it to run properly. They should already be in the calcmet directory and do not require any kind of editing**

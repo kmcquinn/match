@@ -1,24 +1,35 @@
 import numpy as np
 from sys import argv as arg
 import os
+import argparse
 from astropy.table import Table,Column,hstack,vstack
 zsol = 8.69     # Solar z
 fake = 8.0     # Test gas z
 
 '''
+SYNTAX:
 python calcmet.py [file with galaxies] [resolution] [library]
 '''
 
+'''GENERAL FUNCTIONS'''
 # Searches for item in a list and returns the index of the item in the list if it is in the list
 def itin(x,pop):
     for i in range(len(pop)):
         if x == pop[i]:
             return int(i)
 
-'''
-Defines variables from out.final file in the table 'dat'.
-'''
+def parse_options():
+    parser = arparse.ArgumentParser()
+    parser.add_argument('galaxy_list',action='store',help='file containing list of galaxies whose MRFs will be calculated')
+    parser.add_argument('resolution',action='store',help='resolution to be used for MRF calculation')
+    parser.add_argument('library',action='store',help='stellar evolution library used in desired run')
+    parser.add_argument('--camera','-c',dest='camera',action='store',help='camera used for observations',default='acs')
+    args = parser.parse_args()
+    return args
 
+
+'''LOADING DATA'''
+#Defines variables from out.final file in the table 'dat'.
 def define(bop):
     global totsf
     global totsfu
@@ -40,11 +51,8 @@ def define(bop):
                                'uhh','well','csf','csfu','csfl'],
               dtype=['f','f','f','f','f','f','f','f','f','f','f','f','f','f','f'])
     
-'''
-Reads in oxygen abundances from galaxy_list_O.txt as the table 'gas'
-'''
-
-def gastab(boop):
+#Reads in oxygen abundances from galaxy_list_O.txt as the table 'gas'
+def gas_table(boop):
     global gas
     f=open(boop,'r')
     nam=f.readline().split()
@@ -53,11 +61,8 @@ def gastab(boop):
     gas=Table(rows=gal,names=['gal','z','zerr','NO','NOerr'],dtype=['S','f8','f8','f8','f8'])
     return gas
 
-'''
-Reads in HI abundances from metals_opticaldata.txt as the table 'hi'
-'''
-
-def hitab(boop):
+#Reads in HI abundances from metals_opticaldata.txt as the table 'hi'
+def HI_table(boop):
     global hi
     f=open(boop,'r')
     for i in range(31):
@@ -68,40 +73,28 @@ def hitab(boop):
     hi=Table(rows=ale,names=['gal','loghi','dist'],dtype=['S','f8','f8'])
 
 
-# In[40]:
-
-'''
-Calculates the amount of oxygen formed in the galaxy with 3 different nucleosynthesis yields from 
-Nomoto et al. 2006, which are p1, p2, and p3.
-'''
-
-def cogal(t,u,l):     # t = total star formation
+'''MRF CALCULATIONS'''
+# Calculates the amount of oxygen formed in the galaxy with 3 different nucleosynthesis yields from 
+#    Nomoto et al. 2006, which are p1, p2, and p3.
+def Omass_total(t,u,l):     # t = total star formation
     t=float(t)
     p1=0.0054
     p2=0.00658
     p3=0.0086
     return [[t*p1,u*p1,l*p1],[t*p2,u*p2,l*p2],[t*p3,u*p3,l*p3]]
 
-
-# In[41]:
-
-'''
-Calculates the mass of oxygen in the gas.
-'''
+# Calculates the mass of oxygen in the gas.
 # Need to include zerr in final output!
-
-def cogas(nam):     # nam = galaxy name, no 0's before number (ex. UGC8508, not UGC08508)
-
+def Omass_gas(nam):     # nam = galaxy name
     if len(nam)!= 3 and nam[3] == ' ':
         nam = nam[0:3]+nam[4:]
-############### Takes O abundance from known data ###################
 
+    # Takes O abundance from known data
     if nam in gas['gal']:     # Checks if galaxy's oxygen abundances are available
         i=itin(nam,gas['gal'])
-	z=gas['z'][i]
+	    z=gas['z'][i]
         zerr=gas['zerr'][i]
-
-    else:     # Changes input nam if galaxy isn't found in data
+    else:     # Changes input name if galaxy isn't found in data
         mam = nam[0:3]+'0'+nam[3:]
         i=itin(mam,gas['gal'])
         if i != None:
@@ -116,11 +109,10 @@ def cogas(nam):     # nam = galaxy name, no 0's before number (ex. UGC8508, not 
             else:
                 return 'No oxygen abundance available for '+nam+'.'
 
-############### Calculates atomic hydrogen gas mass from HI flux ##################
-
+    # Calculates atomic hydrogen gas mass from HI flux
     if nam in hi['gal']:
         i=itin(nam,hi['gal'])
-	ahg=2.356e5*(float(hi['dist'][i])**2)*10**(float(hi['loghi'][i]))
+	    ahg=2.356e5*(float(hi['dist'][i])**2)*10**(float(hi['loghi'][i]))
         # ahg = atomic hydrogen gas mass
     else:     # Changes input nam if galaxy isn't found in database
         ham = nam[0:3]+'0'+nam[3:]
@@ -131,25 +123,17 @@ def cogas(nam):     # nam = galaxy name, no 0's before number (ex. UGC8508, not 
             ham = ham[0:3]+'0'+ham[3:]
             i=itin(ham,gas['gal'])
 	    if i != None:
-                ahg=2.356e5*(float(hi['dist'][i])**2)*10**(float(hi['loghi'][i]))
+            ahg=2.356e5*(float(hi['dist'][i])**2)*10**(float(hi['loghi'][i]))
             else:
                 return 'No HI flux available for '+nam+'.'
-
 
     agm = 1.33 * ahg     # Total atomic gas mass, includes helium
     mg = 0.1 * agm     # Molecular gas mass (assuming no availabe measurements)
     gm = agm + mg     # Total mass of gas
     return [[gm*16.*10**(z-12.),abs(gm*16.*10**(z-12.)*np.log(10))*zerr],ahg]
 
-
-# In[42]:
-
-'''
-Calculates the amount of oxygen locked in the stars.
-'''
-
-def costar(r,ru,rl,st,et,z,zerru,zerrl):    # Takes sfr, sfr upper and lower uncertainty, time bin, metallicity,
-                                            # upper and lower uncertainties
+#Calculates the amount of oxygen locked in the stars.
+def Omass_stars(r,ru,rl,st,et,z,zerru,zerrl):    # Takes sfr, sfr upper and lower uncertainty, time bin, metallicity, upper and lower uncertainties
     Rec = .436    # Recycling Fraction
     somd = []     # Scaled oxygen mass density for each time bin
     somderu = []
@@ -180,13 +164,8 @@ def costar(r,ru,rl,st,et,z,zerru,zerrl):    # Takes sfr, sfr upper and lower unc
     return [sum(om), (sum([i**2 for i in omerru]))**(1./2.), (sum([i**2 for i in omerrl]))**(1./2.)]     # Total oxygen mass 
                                                                                                          # in stars
 
-
-# In[43]:
-
-'''
-Calculates the total oxygen budget.
-'''
-def obud(g,s,t):     # Takes oxygen in gas, stars, and total oxygen formed
+# Calculates the total oxygen budget.
+def calculate_mrf(g,s,t):     # Takes oxygen in gas, stars, and total oxygen formed
     ans=[]
     erru=[]
     errl=[]
@@ -197,21 +176,18 @@ def obud(g,s,t):     # Takes oxygen in gas, stars, and total oxygen formed
     return ans,erru,errl
 
 
-# In[44]:
-
-'''
-Add results to a really ugly file.
-'''
+'''SAVE RESULTS'''
+# Add results to a file.
 # apparently blank.ljust is a good way of making a really pretty file
-def maketab(nam,filnam,output):
+def save_data(nam,filnam,output):
     define(filnam)
-    gastab('galaxy_list_O.txt')
-    hitab('metals_opticaldata.txt')
-    a=cogas(nam)[0]
-    ahg = cogas(nam)[1]
-    b=costar(dat['sfr'],dat['sfru'],dat['sfrl'],dat['start'],dat['end'],dat['met'],dat['metu'],dat['metl'])
-    c=cogal(totsf,totsfu,totsfl)
-    d=obud(a,b,c)
+    gas_table('galaxy_list_O.txt')
+    HI_table('metals_opticaldata.txt')
+    a=Omass_gas(nam)[0]
+    ahg = Omass_gas(nam)[1]
+    b=Omass_stars(dat['sfr'],dat['sfru'],dat['sfrl'],dat['start'],dat['end'],dat['met'],dat['metu'],dat['metl'])
+    c=Omass_total(totsf,totsfu,totsfl)
+    d=calculate_mrf(a,b,c)
     if a!='No oxygen abundance available for '+nam+'.' and a!='No HI flux available for '+nam+'.':
         if output in os.listdir("."):
             thi=open(output,'a')
@@ -220,29 +196,25 @@ def maketab(nam,filnam,output):
             thi.close()
         else:
             thi=open(output,'w')
-            thi.write('GalaxyName\tMRF\t+\t-\tMstar\t+\t-\tMgas\tMgas/Mstar')
+            thi.write('GalaxyName\tMRF\t+\t-\tMstar\tMgas\tMgas/Mstar')
             thi.write('\n')
             thi.write(nam+'\t'+str(d[0][1]*100)+'\t'+str(d[1][1]*100)+'\t'+str(d[2][1]*100)+'\t'+str(totsf)+'\t'+str(ahg)+'\t'+str(ahg/totsf))
 	    thi.close()
 
 
-# In[45]:
-
 # Proper syntax: python calcmet.py [name of file with data in it]
-
 def main():
-        filnam=arg[1]
-	res=arg[2]
-	lib=arg[3]
-        galdir='/work/04316/kmcquinn/wrangler/metals/galaxies/acs'
-        nam=open(filnam,'r')
-        with open(filnam) as f:
-                bu=f.read().splitlines()
-        naml=[]
-        for i in bu:
-                naml.append(i.split("\t"))
-        for i in naml:
-                maketab(i[1],galdir+'/'+i[0]+'/metals_proc/'+res+'_'+lib+'/out.hybrid.final',lib+'_mrflist')
+    # Parses through command line arguments
+    args = parse_options()
+    galdir='/work/04316/kmcquinn/wrangler/metals/galaxies/'+args.camera
+    nam=open(args.galaxy_list,'r')
+    with open(args.galaxy_list) as f:
+            bu=f.read().splitlines()
+    naml=[]
+    for i in bu:
+            naml.append(i.split("\t"))
+    for i in naml:
+            save_data(i[1],galdir+'/'+i[0]+'/metals_proc/'+args.resolution+'_'+args.library+'/out.hybrid.final',args.library+'_mrflist')
 
 
 
