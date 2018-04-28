@@ -9,7 +9,7 @@
 import numpy as np
 import matplotlib
 #uncomment line below for TACC usage
-matplotlib.use("Agg")
+#matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.colors as cl
 import sys
@@ -17,14 +17,13 @@ import sys
 cmdfile_name = sys.argv[1]
 outfile_name = sys.argv[2]
 plot_name = sys.argv[3]
+
 figsize=(8, 8)
 subsize = 0.25
 
 
 subx1, suby1 = 0.05, 0.05
 subx2, suby2 = 0.38, 0.38
-
-
 subx3, suby3 = 0.72, 0.72
 interpolation = 'hanning'
 #you dont need to change these to change the label, see line 368
@@ -156,10 +155,10 @@ def plot_Scatter2(fig, x, y, subx1, suby2, subsize, title, xlabel, ylabel,linest
     
       ax = fig.add_axes([subx1, suby2, subsize, subsize])
       if len(errlow) == 0:
-		ax.scatter(x, y,'k', linestyle = 'None', linewidth = 0)
+		ax.scatter(x, y,'k', linestyle = linestyle, linewidth = 0)
       else:
           
-		ax.errorbar(x, y, yerr=[errlow, errhigh], fmt='k', capsize=0, ecolor='k', elinewidth=0.7, linestyle='none', marker = '.', markersize = 3)
+		ax.errorbar(x, y, yerr=[errlow, errhigh], fmt='k', capsize=0, ecolor='k', elinewidth=0.7, linestyle=linestyle, marker = '.', markersize = 3)
       ax.set_title(title, fontsize=8)
       ax.set_xlabel(xlabel, fontsize=8)
       ax.set_ylabel(ylabel, fontsize=8)
@@ -177,21 +176,14 @@ def plot_Scatter2(fig, x, y, subx1, suby2, subsize, title, xlabel, ylabel,linest
       #ax.set_yticklabels(ax.get_yticks(), size=8)
       return ax
 
-def plot_Hist(fig, x, y, subx1, suby2, subsize, title, xlabel, ylabel, linestyle, errlow=[], errhigh=[], bound = False):
+def plot_Hist(fig, x_begin, x_end, y, subx1, suby2, subsize, title, xlabel, ylabel, linestyle, errlow=[], errhigh=[], bound = False):
    
     ax = fig.add_axes([subx1, suby2, subsize, subsize]) 
+
+    t_width = lage2_arr - lage_arr
     
-    a = lage_arr
-    b = lage2_arr
-    ab = list(a) + list (b)
-    abc = list(set(ab))
-    abcd = sorted(abc)
-    bins = np.array(abcd)
-    
-    widths = bins[1:] - bins[:-1]
-    
-    ax.step(bins[1:], sfr_arr, color='k')
-    #ax.bar(bins[:-1], sfr_arr, width = widths, edgecolor = 'k', color = 'none', alpha = 0.4)
+    #ax.step(bins[1:], sfr_arr, color='k')
+    ax.bar(lage_arr, sfr_arr, width = t_width, edgecolor = 'k', color = 'w', alpha = 0.4)
     ax.set_xlim(6.6, 10.15)
     ax.invert_xaxis()
     
@@ -204,27 +196,21 @@ def plot_Hist(fig, x, y, subx1, suby2, subsize, title, xlabel, ylabel, linestyle
     #ax.set_yticklabels(ax.get_yticks(), size=8)
    
     #This tells the error bars to be in the center of the graph, and also plots them
-    bincenters = .5*(bins[1:] + bins[:-1])
+   
+    t_mid =lage_arr + 0.5*t_width
     ax = fig.add_axes([subx1, suby2, subsize, subsize])
-    ax.errorbar(bincenters, sfr_arr, yerr = [sfr_low, sfr_high], fmt = ' ', capsize = 0, color = 'r')
+    ax.errorbar(t_mid, sfr_arr, yerr = [sfr_low, sfr_high], fmt = ' ', capsize = 0, color = 'k')
     
     return ax
     
-def plot_LinHist(fig, x, y, subx1, suby2, subsize, title, xlabel, ylabel, linestyle, errlow=[], errhigh=[], bound = False):
+def plot_LinHist(fig, x_begin, x_end, y, subx1, suby2, subsize, title, xlabel, ylabel, linestyle, errlow=[], errhigh=[], bound = False):
    
     ax = fig.add_axes([subx1, suby2, subsize, subsize]) 
+
+    t_width = age2_arr - age_arr
     
-    a = age_arr
-    b = age2_arr
-    ab = list(a) + list (b)
-    abc = list(set(ab))
-    abcd = sorted(abc)
-    bins = np.array(abcd)
-    
-    widths = bins[1:] - bins[:-1]
-    
-    ax.step(bins[1:], sfr_arr, color='k')
-    #ax.bar(bins[:-1], sfr_arr, width = widths, edgecolor = 'k', color = 'w', alpha = 0.4)
+    #ax.step(bins[1:], sfr_arr, color='k')
+    ax.bar(age_arr, sfr_arr, width = t_width, edgecolor = 'k', color = 'w', alpha = 0.4)
     ax.set_xlim(0, 14.0)
     ax.invert_xaxis()
     
@@ -238,9 +224,9 @@ def plot_LinHist(fig, x, y, subx1, suby2, subsize, title, xlabel, ylabel, linest
     #ax.set_xticklabels(ax.get_xticks(), size=8)
     #ax.set_yticklabels(ax.get_yticks(), size=8)
    
-    bincenters = .5*(bins[1:] + bins[:-1])
+    t_mid =age_arr + 0.5*t_width
     ax = fig.add_axes([subx1, suby2, subsize, subsize])
-    ax.errorbar(bincenters, sfr_arr, yerr = [sfr_low, sfr_high], fmt = ' ', capsize = 0, color = 'r')
+    ax.errorbar(t_mid, sfr_arr, yerr = [sfr_low, sfr_high], fmt = ' ', capsize = 0, color = 'k')
     
     return ax
      
@@ -286,8 +272,8 @@ lage_arr=outfile[0]
 lage_arr1=np.append(lage_arr, 10.15)
 lage2_arr=outfile[1]
 sfr_arr=outfile[3]*100
-sfr_low=outfile[5]
-sfr_high=outfile[4]
+sfr_low=outfile[5]*100
+sfr_high=outfile[4]*100
 #csfr_arr=outfile[12]
 #To_arr = outfile[5]
 #Tf_arr = outfile[6]
@@ -318,9 +304,9 @@ line =outfile.readline()
 totalSF = float(line.split()[1])
 outfile.close()
 
-age_arr = [10**(n)/1e9 for n in lage_arr]
+age_arr = 10**(lage_arr)/1e9
 age_arr1 = np.append(age_arr, 14)
-age2_arr = [10**(n)/1e9 for n in lage2_arr]
+age2_arr = 10**(lage2_arr)/1e9 
 #age2_arr1 = np.append(age2_arr, 14)
 
 for i in range(len(csfr_arr)):
@@ -355,9 +341,9 @@ ax_mod, cax_mod = plot_HessD(fig, mod_arr, subx1, suby2, subsize, extent, mod_cm
 
 ax_sig, cax_sig = plot_HessD(fig, sig_arr, subx1, suby1, subsize, extent, sig_cmin, sig_cmax, interpolation, '(g) Residual Significance', xlabel, ylabel,0)
 
-ax_2 = plot_Hist(fig, lage_arr, sfr_arr, subx2, suby2, subsize, '(e) Star Formation Rate', 'log(age)','SFR (10$^{-2}$ M$\odot$ yr$^{-1}$)','steps', sfr_low, sfr_high)
+ax_2 = plot_Hist(fig, lage_arr, lage2_arr, sfr_arr, subx2, suby2, subsize, '(e) Star Formation Rate', 'log(age)','SFR (10$^{-2}$ M$\odot$ yr$^{-1}$)','steps', sfr_low, sfr_high)
 
-ax5 = plot_LinHist(fig, age_arr, sfr_arr, subx3, suby2, subsize, '(f) Star Formation Rate', 'age (Gyr)','SFR (10$^{-2}$ M$\odot$ yr$^{-1}$)','steps', sfr_low, sfr_high)
+ax5 = plot_LinHist(fig, age_arr, age2_arr, sfr_arr, subx3, suby2, subsize, '(f) Star Formation Rate', 'age (Gyr)','SFR (10$^{-2}$ M$\odot$ yr$^{-1}$)','steps', sfr_low, sfr_high)
 
 ax_1 = plot_Scatter(fig, lage_arr1, csf_arr1, subx2, suby3, subsize, '(b) Cumulative Star Formation', 'log(age)','Fraction of Stellar Mass','solid', csf_low1, csf_up1)
 
