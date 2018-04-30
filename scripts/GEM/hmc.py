@@ -117,10 +117,11 @@ for i,e in enumerate(datfs):
     with open(consolefile,'a') as consolef:
         print >>consolef,'INPUT: ',inputf
     #initial guesses
+    #dt and tint used to be .01 but I had to lower them for UGC9128 -akm
     nmc_ = 100
     nsfr_ = 0
-    dt_ = 0.01
-    tint_ = 0.01
+    dt_ = 0.005
+    tint_ = 0.005
     a_frac = 1.
 
     #determine dt
@@ -140,8 +141,9 @@ for i,e in enumerate(datfs):
         for map_results in results_arr:  
             print map_results.get()
             results = map_results.get()
-            dt_+=0.005
-            tint_+=0.005
+	    #changing the step size from .005 to .001
+            dt_+=0.001
+            tint_+=0.001
             flags = ' '.join(['-nmc='+str(nmc_),'-nsfr='+str(nsfr_),'-dt='+str(dt_),'-tint='+str(tint_)])
             a_frac = np.average([get_accept_frac(i) for i in results])
             with open(consolefile,'a') as consolef:
