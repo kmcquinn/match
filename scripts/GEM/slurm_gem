@@ -1,0 +1,14 @@
+#!/bin/bash
+#SBATCH -J KDG215_fp           # job name
+#SBATCH -o KDG215_fp.o%j       # output and error file name (%j expands to jobID)
+#SBATCH -N 1
+#SBATCH -n 24              # total number of mpi tasks requested, i use 24 but you can try changing it
+#SBATCH -p normal     # queue (partition) -- normal, development, etc.
+#SBATCH -t 5:00:00        # run time (hh:mm:ss) - 1.5 hours, this takes ~30h
+#SBATCH --mail-user=zilishen@utexas.edu
+#SBATCH --mail-type=begin
+#SBATCH --mail-type=end    # email me when the job finishes
+
+python gem_nohmc.py 12878_KDG215 sfh_res PARSEC 
+#python gem.py 12878_KDG215 sfh_starburst_v5res MIST -dAv=0.05
+#python gem.py 12878_KDG215 sfh_res PARSEC -dAv=0.05
