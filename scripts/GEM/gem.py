@@ -1,21 +1,28 @@
 '''
 TEMPORARY INITIAL SETUP: You will have to create a directory with a name like 'sfh_fullres_MIST' (or whatever resolution/library you're using) and copy a premade parameter file into this directory until we are able to create pars files automatically with this code.
 
-Syntax: python goodraps.py [galaxy directory name] [resolution] [library]
+Syntax: python gem.py [galaxy directory name] [resolution] [library]
+e.g. python gem.py 12878_KDG215 res PARSEC -dAv=0.05
+
+The library name has to be in all caps!
+Use slurm_gem in match/scripts/GEM/ to run.
+
 Optional arguments:
 -phot [path to phot file from galaxy's metals_proc directory] : specifies where the phot file you would like to use is located
 -fake [path to fake file from galaxy's metals_proc directory] : specifies where the fake file you would like to use is located
 -nozinc : use if you do not want to include zinc in your  run
 -galpath [full path to 'galaxies' directory] : specifies the main directory in which directories for all galaxy observations are located, usually just called '.../galaxies/'
+-dAv: [use extinction value obtained from extinction tests]
 '''
 
 '''
-What Goodraps Does:
+What gem.py Does:
 - Runs initial calcsfh
 - Runs hmc script to determine parameters
 - pulls parameters from hmc script and runs real hmc
 - runs 50 MC calcsfhs
 - generates out.final files
+- runs 9_panel.py to make final plot
 
 Setup Required:
 - Place phot and fake files into input_data directory located in metals_proc OR specify the paths to these files on command line with -phot and -fake arguments
