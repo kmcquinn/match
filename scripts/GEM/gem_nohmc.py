@@ -1,28 +1,21 @@
 '''
 TEMPORARY INITIAL SETUP: You will have to create a directory with a name like 'sfh_fullres_MIST' (or whatever resolution/library you're using) and copy a premade parameter file into this directory until we are able to create pars files automatically with this code.
 
-Syntax: python gem.py [galaxy directory name] [resolution] [library]
-e.g. python gem.py 12878_KDG215 res PARSEC -dAv=0.05
-
-The library name has to be in all caps!
-Use slurm_gem in match/scripts/GEM/ to run.
-
+Syntax: python goodraps.py [galaxy directory name] [resolution] [library]
 Optional arguments:
 -phot [path to phot file from galaxy's metals_proc directory] : specifies where the phot file you would like to use is located
 -fake [path to fake file from galaxy's metals_proc directory] : specifies where the fake file you would like to use is located
 -nozinc : use if you do not want to include zinc in your  run
 -galpath [full path to 'galaxies' directory] : specifies the main directory in which directories for all galaxy observations are located, usually just called '.../galaxies/'
--dAv: [use extinction value obtained from extinction tests]
 '''
 
 '''
-What gem.py Does:
+What Goodraps Does:
 - Runs initial calcsfh
 - Runs hmc script to determine parameters
 - pulls parameters from hmc script and runs real hmc
 - runs 50 MC calcsfhs
 - generates out.final files
-- runs 9_panel.py to make final plot
 
 Setup Required:
 - Place phot and fake files into input_data directory located in metals_proc OR specify the paths to these files on command line with -phot and -fake arguments
@@ -55,13 +48,12 @@ def parse_options():
         parser = argparse.ArgumentParser(description='Process input parameters.')
         # Defines required arguments used on the command line
         parser.add_argument('galaxydir',action='store',help='name of galaxy directory (note: this is just the name of the main galaxy directory, not the whole path to the directory)')
-        parser.add_argument('res',action='store',help='resolution used (sfh_res/sfh_no_res/sfh_starburst_v1res/sfh_starburst_v2res')
+        parser.add_argument('res',action='store',help='resolution used (sfh_res/sfh_no_res/sfh_starburst_v1res/sfh_starburst_v2res/sfh_starburst_v3res')
         parser.add_argument('lib',action='store',help='stellar evolution library used for derivation (parsec/mist/padova)')
         parser.add_argument('-phot',dest='phot',action='store',help="location of phot file from galaxy's metals_proc directory",default='input_data/phot')
         parser.add_argument('-fake',dest='fake',action='store',help="location of fake file from galaxy's metals_proc directory",default='input_data/fake')
 	parser.add_argument('-galpath',dest='galpath',action='store',help='full path to galaxies directory',default='/work/04316/kmcquinn/wrangler/cusp_core/galaxies/')
 	parser.add_argument('-nozinc',dest='nozinc',action='store_true')
-        parser.add_argument('-dAv',dest='dAv',action='store')
         # Parses through the arguments and saves them within the keyword args
         args = parser.parse_args()
         return args
@@ -131,10 +123,9 @@ def makePars(basepath, newpath, depths, times, zinc):
 def run_initial_calcsfh(mp_path,sfh_path, args):
 	photLoc = mp_path+args.phot
 	fakeLoc = mp_path+args.fake
-        dAv = args.dAv
 	#run calcsfh once for use with hybridMC
 	######## CHANGE PATH TO PARAMETER FILE ONCE CODE CAN GENERATE PARAMETER FILES ###################
-	comm1 = "calcsfh "+sfh_path+"pars "+photLoc+" "+fakeLoc+" "+sfh_path+"out -Kroupa "+"-dAv="+args.dAv+" "
+	comm1 = "calcsfh "+sfh_path+"pars "+photLoc+" "+fakeLoc+" "+sfh_path+"out -Kroupa "
 	if (args.lib == "MIST") or (args.lib == "PARSEC"):
 		comm2 = "-"+args.lib.upper()+" "
 	else:
@@ -264,8 +255,8 @@ def main():
     	comm = "mkdir "+sfh_path
 #    	sp.call(comm.split())
 
-    run_initial_calcsfh(mp_path,sfh_path,args)
-    run_hmc(sfh_path)
+#    run_initial_calcsfh(mp_path,sfh_path,args)
+#    run_hmc(sfh_path)
     run_calcmc(mp_path,sfh_path,args,params)
     generate_final(sfh_path,args.galaxydir)
 
