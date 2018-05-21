@@ -19,7 +19,7 @@ def itin(x,pop):
             return int(i)
 
 def parse_options():
-    parser = arparse.ArgumentParser()
+    parser = argparse.ArgumentParser()
     parser.add_argument('galaxy_list',action='store',help='file containing list of galaxies whose MRFs will be calculated')
     parser.add_argument('resolution',action='store',help='resolution to be used for MRF calculation')
     parser.add_argument('library',action='store',help='stellar evolution library used in desired run')
@@ -92,7 +92,7 @@ def Omass_gas(nam):     # nam = galaxy name
     # Takes O abundance from known data
     if nam in gas['gal']:     # Checks if galaxy's oxygen abundances are available
         i=itin(nam,gas['gal'])
-	    z=gas['z'][i]
+        z=gas['z'][i]
         zerr=gas['zerr'][i]
     else:     # Changes input name if galaxy isn't found in data
         mam = nam[0:3]+'0'+nam[3:]
@@ -112,7 +112,7 @@ def Omass_gas(nam):     # nam = galaxy name
     # Calculates atomic hydrogen gas mass from HI flux
     if nam in hi['gal']:
         i=itin(nam,hi['gal'])
-	    ahg=2.356e5*(float(hi['dist'][i])**2)*10**(float(hi['loghi'][i]))
+        ahg=2.356e5*(float(hi['dist'][i])**2)*10**(float(hi['loghi'][i]))
         # ahg = atomic hydrogen gas mass
     else:     # Changes input nam if galaxy isn't found in database
         ham = nam[0:3]+'0'+nam[3:]
@@ -123,7 +123,7 @@ def Omass_gas(nam):     # nam = galaxy name
             ham = ham[0:3]+'0'+ham[3:]
             i=itin(ham,gas['gal'])
 	    if i != None:
-            ahg=2.356e5*(float(hi['dist'][i])**2)*10**(float(hi['loghi'][i]))
+                ahg=2.356e5*(float(hi['dist'][i])**2)*10**(float(hi['loghi'][i]))
             else:
                 return 'No HI flux available for '+nam+'.'
 
@@ -166,14 +166,22 @@ def Omass_stars(r,ru,rl,st,et,z,zerru,zerrl):    # Takes sfr, sfr upper and lowe
 
 # Calculates the total oxygen budget.
 def calculate_mrf(g,s,t):     # Takes oxygen in gas, stars, and total oxygen formed
-    ans=[]
-    erru=[]
-    errl=[]
+    tans=[] ; gans=[] ; sans=[]
+    terru=[] ; gerru=[] ; serru=[]
+    terrl=[] ; gerrl=[] ; serrl=[]
+    # add in factor of 2 uncertainty in stellar o abundance upper uncert based on O/Fe ratios McWilliam 1997 AARA
+    s[1] = (s[1]**2 + 0.5**2)**(1./2.)
     for i in range(len(t)):
-        ans.append((g[0]+s[0])/t[i][0])
-        erru.append((((g[1]**2+s[1]**2)**(1./2.)/(g[0]+s[0]))**2+(t[i][1]/t[i][0])**2)**(1./2.)*ans[i])
-        errl.append((((g[1]**2+s[2]**2)**(1./2.)/(g[0]+s[0]))**2+(t[i][2]/t[i][0])**2)**(1./2.)*ans[i])
-    return ans,erru,errl
+        tans.append((g[0]+s[0])/t[i][0])
+        gans.append(g[0]/t[i][0])
+        sans.append(s[0]/t[i][0])
+        terru.append((((g[1]**2+s[1]**2)**(1./2.)/(g[0]+s[0]))**2+(t[i][1]/t[i][0])**2)**(1./2.)*tans[i])
+        terrl.append((((g[1]**2+s[2]**2)**(1./2.)/(g[0]+s[0]))**2+(t[i][2]/t[i][0])**2)**(1./2.)*tans[i])
+        gerru.append(((g[1]/(g[0]))**2+(t[i][1]/t[i][0])**2)**(1./2.)*gans[i])
+        gerrl.append(((g[1]/(g[0]))**2+(t[i][2]/t[i][0])**2)**(1./2.)*gans[i])
+        serru.append(((s[1]/(s[0]))**2+(t[i][1]/t[i][0])**2)**(1./2.)*sans[i])
+        serrl.append(((s[2]/(s[0]))**2+(t[i][2]/t[i][0])**2)**(1./2.)*sans[i])
+    return tans,terru,terrl,gans,gerru,gerrl,sans,serru,serrl
 
 
 '''SAVE RESULTS'''
@@ -192,13 +200,13 @@ def save_data(nam,filnam,output):
         if output in os.listdir("."):
             thi=open(output,'a')
             thi.write('\n')
-            thi.write(nam+'\t'+str(d[0][1]*100)+'\t'+str(d[1][1]*100)+'\t'+str(d[2][1]*100)+'\t'+str(totsf)+'\t'+str(ahg)+'\t'+str(ahg/totsf))
+            thi.write(nam+'\t'+str(d[0][1]*100)+'\t'+str(d[1][1]*100)+'\t'+str(d[2][1]*100)+'\t'+str(d[3][1]*100)+'\t'+str(d[4][1]*100)+'\t'+str(d[5][1]*100)+'\t'+str(d[6][1]*100)+'\t'+str(d[7][1]*100)+'\t'+str(d[8][1]*100)+'\t'+str(totsf)+'\t'+str(ahg)+'\t'+str(ahg/totsf))
             thi.close()
         else:
             thi=open(output,'w')
-            thi.write('GalaxyName\tMRF\t+\t-\tMstar\tMgas\tMgas/Mstar')
+            thi.write('GalaxyName\tMRF\t+\t-\tOgas\t+\t-\tOstars\t+\t-\tMstar\tMgas\tMgas/Mstar')
             thi.write('\n')
-            thi.write(nam+'\t'+str(d[0][1]*100)+'\t'+str(d[1][1]*100)+'\t'+str(d[2][1]*100)+'\t'+str(totsf)+'\t'+str(ahg)+'\t'+str(ahg/totsf))
+            thi.write(nam+'\t'+str(d[0][1]*100)+'\t'+str(d[1][1]*100)+'\t'+str(d[2][1]*100)+'\t'+str(d[3][1]*100)+'\t'+str(d[4][1]*100)+'\t'+str(d[5][1]*100)+'\t'+str(d[6][1]*100)+'\t'+str(d[7][1]*100)+'\t'+str(d[8][1]*100)+'\t'+str(totsf)+'\t'+str(ahg)+'\t'+str(ahg/totsf))
 	    thi.close()
 
 
