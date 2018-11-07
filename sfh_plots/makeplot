@@ -1,0 +1,5 @@
+#!/bin/bash
+for POP in outTEST{001..120}
+do
+	/data/04316/kmcquinn/match2.6/bin/pg_cmd $POP.cmd $POP.ps
+done
